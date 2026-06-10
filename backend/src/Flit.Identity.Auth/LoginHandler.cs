@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using Flit.Identity.Infrastructure.Audit;
 using Flit.Identity.Infrastructure.Persistence;
 using Flit.Identity.Infrastructure.Persistence.Entities;
 using Flit.Identity.Infrastructure.Security;
@@ -17,6 +18,7 @@ public sealed class LoginHandler(
     IPasswordHasher hasher,
     PermissionResolver resolver,
     RsaJwtService jwt,
+    AuditService audit,
     IWebHostEnvironment env)
 {
     public async Task<IResult> HandleAsync(LoginRequest req, HttpContext http, CancellationToken ct)
@@ -29,6 +31,8 @@ public sealed class LoginHandler(
         if (user is null || user.Status != UserStatus.Active || user.PasswordHash is null
             || !hasher.Verify(req.Password, user.PasswordHash))
         {
+            var ip = http.Connection.RemoteIpAddress?.ToString();
+            await audit.LogLoginFailureAsync(req.Email.ToLowerInvariant(), ip, ct);
             return Results.Json(new { code = ApiErrorCodes.InvalidCredentials }, statusCode: StatusCodes.Status401Unauthorized);
         }
 

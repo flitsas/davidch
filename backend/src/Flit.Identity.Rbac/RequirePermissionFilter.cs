@@ -1,3 +1,4 @@
+using Flit.Identity.Infrastructure.Audit;
 using Flit.Identity.Shared.Domain;
 using Flit.Identity.Shared.Errors;
 using Microsoft.AspNetCore.Builder;
@@ -9,7 +10,8 @@ namespace Flit.Identity.Rbac;
 public sealed class RequirePermissionFilter(
     string permissionKey,
     PermissionScope scope,
-    AuthorizationService authorization) : IEndpointFilter
+    AuthorizationService authorization,
+    AuditService audit) : IEndpointFilter
 {
     public async ValueTask<object?> InvokeAsync(
         EndpointFilterInvocationContext context,
@@ -35,6 +37,15 @@ public sealed class RequirePermissionFilter(
                 statusCode: StatusCodes.Status403Forbidden);
         }
 
+        if (user.IsSuperAdmin)
+        {
+            await audit.LogSuperAdminBypassAsync(
+                user.Id,
+                permissionKey,
+                http.Request.Path.Value,
+                http.RequestAborted);
+        }
+
         http.Items["CurrentUser"] = user;
         return await next(context);
     }
@@ -52,7 +63,8 @@ public static class RequirePermissionExtensions
             var filter = new RequirePermissionFilter(
                 permissionKey,
                 scope,
-                factoryContext.ApplicationServices.GetRequiredService<AuthorizationService>());
+                factoryContext.ApplicationServices.GetRequiredService<AuthorizationService>(),
+                factoryContext.ApplicationServices.GetRequiredService<AuditService>());
             return invocationContext => filter.InvokeAsync(invocationContext, next);
         });
     }

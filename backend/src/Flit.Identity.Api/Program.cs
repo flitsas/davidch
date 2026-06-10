@@ -1,5 +1,6 @@
 using Flit.Identity.Api.Middleware;
 using Flit.Identity.Auth;
+using Flit.Identity.Infrastructure.Audit;
 using Flit.Identity.Infrastructure.Persistence;
 using Flit.Identity.Infrastructure.Persistence.Seed;
 using Flit.Identity.Infrastructure.Security;
@@ -26,7 +27,8 @@ builder.Services.AddScoped<ActivateHandler>();
 builder.Services.AddScoped<ForgotPasswordHandler>();
 builder.Services.AddScoped<ResetPasswordHandler>();
 builder.Services.AddScoped<SessionRevocationService>();
-builder.Services.AddSingleton<ForgotPasswordRateLimiter>();
+builder.Services.AddSingleton<AuthRateLimiter>();
+builder.Services.AddScoped<AuditService>();
 builder.Services.AddSingleton<IEmailSender, EmailSender>();
 builder.Services.AddScoped<InviteUserHandler>();
 builder.Services.AddScoped<ForceResetHandler>();
@@ -48,6 +50,7 @@ using (var scope = app.Services.CreateScope())
         scope.ServiceProvider.GetRequiredService<IPasswordHasher>());
 }
 
+app.UseMiddleware<RateLimitingMiddleware>();
 app.UseMiddleware<JwtCookieAuthenticationMiddleware>();
 app.UseMiddleware<TokenVersionValidationMiddleware>();
 app.UseMiddleware<TenantResolutionMiddleware>();

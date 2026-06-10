@@ -1,8 +1,10 @@
 using System.Text.Json.Serialization;
 using Flit.Identity.Auth;
+using Flit.Identity.Infrastructure.Audit;
 using Flit.Identity.Infrastructure.Persistence;
 using Flit.Identity.Infrastructure.Persistence.Entities;
 using Flit.Identity.Infrastructure.Tenancy;
+using Flit.Identity.Shared.Auth;
 using Flit.Identity.Shared.Domain;
 using Flit.Identity.Shared.Errors;
 using Microsoft.AspNetCore.Builder;
@@ -157,6 +159,8 @@ public static class RolesEndpoints
         SetRolePermissionsRequest req,
         IdentityDbContext db,
         SessionRevocationService revocation,
+        AuditService audit,
+        HttpContext ctx,
         CancellationToken ct)
     {
         var role = await db.Roles
@@ -214,6 +218,15 @@ public static class RolesEndpoints
             await revocation.RevokeAllSessionsAsync(userId, ct);
         }
 
+        var actor = (CurrentUser)ctx.Items["CurrentUser"]!;
+        await audit.LogPrivilegeChangeAsync(
+            actor.Id,
+            AuditActions.RolePermissionsChanged,
+            "role",
+            id,
+            new { permission_count = req.Permissions.Count, affected_users = affectedUserIds.Count },
+            ct);
+
         return Results.NoContent();
     }
 
@@ -222,6 +235,8 @@ public static class RolesEndpoints
         MigrateRoleRequest req,
         IdentityDbContext db,
         SessionRevocationService revocation,
+        AuditService audit,
+        HttpContext ctx,
         CancellationToken ct)
     {
         if (id == req.ReplacementRoleId)
@@ -298,12 +313,23 @@ public static class RolesEndpoints
             await revocation.RevokeAllSessionsAsync(userId, ct);
         }
 
+        var actor = (CurrentUser)ctx.Items["CurrentUser"]!;
+        await audit.LogPrivilegeChangeAsync(
+            actor.Id,
+            AuditActions.RoleMigrated,
+            "role",
+            id,
+            new { replacement_role_id = req.ReplacementRoleId, affected_users = affectedUserIds.Count },
+            ct);
+
         return Results.NoContent();
     }
 
     private static async Task<IResult> DeleteRoleAsync(
         Guid id,
         IdentityDbContext db,
+        AuditService audit,
+        HttpContext ctx,
         CancellationToken ct)
     {
         var role = await db.Roles
@@ -333,6 +359,14 @@ public static class RolesEndpoints
 
         db.Roles.Remove(role);
         await db.SaveChangesAsync(ct);
+
+        var actor = (CurrentUser)ctx.Items["CurrentUser"]!;
+        await audit.LogPrivilegeChangeAsync(
+            actor.Id,
+            AuditActions.RoleDeleted,
+            "role",
+            id,
+            ct: ct);
 
         return Results.NoContent();
     }

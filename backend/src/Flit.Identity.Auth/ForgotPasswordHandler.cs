@@ -15,8 +15,7 @@ public record ForgotPasswordRequest(string Email);
 public sealed class ForgotPasswordHandler(
     IdentityDbContext db,
     IEmailSender email,
-    IConfiguration config,
-    ForgotPasswordRateLimiter rateLimiter)
+    IConfiguration config)
 {
     public async Task<IResult> HandleAsync(ForgotPasswordRequest req, HttpContext http, CancellationToken ct)
     {
@@ -26,12 +25,6 @@ public sealed class ForgotPasswordHandler(
         }
 
         var normalizedEmail = req.Email.ToLowerInvariant();
-        var ip = http.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-
-        if (!rateLimiter.TryAcquire(ip, normalizedEmail))
-        {
-            return Results.Ok(new { message = "If an account exists, a reset link has been sent." });
-        }
 
         var user = await db.Users
             .SingleOrDefaultAsync(u => u.Email == normalizedEmail && u.Status == UserStatus.Active, ct);

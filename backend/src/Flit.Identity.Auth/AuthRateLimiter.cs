@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 
 namespace Flit.Identity.Auth;
 
-public sealed class ForgotPasswordRateLimiter
+public sealed class AuthRateLimiter
 {
     private readonly ConcurrentDictionary<string, Queue<DateTimeOffset>> _attempts = new();
     private const int MaxAttempts = 5;

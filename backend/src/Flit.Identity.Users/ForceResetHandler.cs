@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Flit.Identity.Auth;
+using Flit.Identity.Infrastructure.Audit;
 using Flit.Identity.Infrastructure.Persistence;
 using Flit.Identity.Infrastructure.Persistence.Entities;
 using Flit.Identity.Infrastructure.Security;
@@ -17,7 +18,8 @@ public sealed class ForceResetHandler(
     IdentityDbContext db,
     IEmailSender email,
     IConfiguration config,
-    SessionRevocationService revocation)
+    SessionRevocationService revocation,
+    AuditService audit)
 {
     public async Task<IResult> HandleAsync(Guid userId, CurrentUser admin, CancellationToken ct)
     {
@@ -54,6 +56,12 @@ public sealed class ForceResetHandler(
 
         var link = $"{config["App:PublicBaseUrl"]}/reset-password?token={Uri.EscapeDataString(raw)}";
         await email.SendPasswordResetAsync(user.Email, link, ct);
+        await audit.LogPrivilegeChangeAsync(
+            admin.Id,
+            AuditActions.UserForceReset,
+            "user",
+            user.Id,
+            ct: ct);
 
         return Results.Ok(new { user_id = user.Id, email = user.Email });
     }

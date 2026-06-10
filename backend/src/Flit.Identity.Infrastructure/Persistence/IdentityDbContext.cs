@@ -1,3 +1,4 @@
+using Flit.Identity.Infrastructure.Audit;
 using Flit.Identity.Infrastructure.Persistence.Entities;
 using Flit.Identity.Infrastructure.Tenancy;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +18,7 @@ public class IdentityDbContext(DbContextOptions<IdentityDbContext> options, ITen
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<InvitationToken> InvitationTokens => Set<InvitationToken>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -78,6 +80,17 @@ public class IdentityDbContext(DbContextOptions<IdentityDbContext> options, ITen
         {
             e.HasKey(x => x.Id);
             e.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId);
+        });
+
+        modelBuilder.Entity<AuditLog>(e =>
+        {
+            e.ToTable("audit_logs");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Action).IsRequired();
+            e.Property(x => x.TargetType).IsRequired();
+            e.Property(x => x.Metadata).HasColumnType("jsonb");
+            e.HasIndex(x => x.CreatedAt);
+            e.HasIndex(x => x.ActorUserId);
         });
     }
 }

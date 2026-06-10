@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Flit.Identity.Auth;
+using Flit.Identity.Infrastructure.Audit;
 using Flit.Identity.Infrastructure.Persistence;
 using Flit.Identity.Infrastructure.Persistence.Entities;
 using Flit.Identity.Rbac;
@@ -13,7 +14,8 @@ namespace Flit.Identity.Users;
 public sealed class SetUserRolesHandler(
     IdentityDbContext db,
     SessionRevocationService revocation,
-    RoleConflictAnalyzer conflictAnalyzer)
+    RoleConflictAnalyzer conflictAnalyzer,
+    AuditService audit)
 {
     public async Task<IResult> HandleAsync(
         Guid userId,
@@ -98,6 +100,13 @@ public sealed class SetUserRolesHandler(
 
         await db.SaveChangesAsync(ct);
         await revocation.RevokeAllSessionsAsync(user.Id, ct);
+        await audit.LogPrivilegeChangeAsync(
+            admin.Id,
+            AuditActions.UserRolesChanged,
+            "user",
+            user.Id,
+            new { role_ids = roleIds },
+            ct);
 
         return Results.NoContent();
     }

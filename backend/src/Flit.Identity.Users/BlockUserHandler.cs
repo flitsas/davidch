@@ -1,4 +1,5 @@
 using Flit.Identity.Auth;
+using Flit.Identity.Infrastructure.Audit;
 using Flit.Identity.Infrastructure.Persistence;
 using Flit.Identity.Shared.Auth;
 using Flit.Identity.Shared.Domain;
@@ -8,7 +9,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Flit.Identity.Users;
 
-public sealed class BlockUserHandler(IdentityDbContext db, SessionRevocationService revocation)
+public sealed class BlockUserHandler(
+    IdentityDbContext db,
+    SessionRevocationService revocation,
+    AuditService audit)
 {
     public async Task<IResult> HandleAsync(Guid userId, CurrentUser admin, CancellationToken ct)
     {
@@ -31,6 +35,12 @@ public sealed class BlockUserHandler(IdentityDbContext db, SessionRevocationServ
         user.Status = UserStatus.Blocked;
         await db.SaveChangesAsync(ct);
         await revocation.RevokeAllSessionsAsync(user.Id, ct);
+        await audit.LogPrivilegeChangeAsync(
+            admin.Id,
+            AuditActions.UserBlocked,
+            "user",
+            user.Id,
+            ct: ct);
 
         return Results.NoContent();
     }
