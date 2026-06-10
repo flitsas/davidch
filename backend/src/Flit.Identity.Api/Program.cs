@@ -3,12 +3,15 @@ using Flit.Identity.Auth;
 using Flit.Identity.Infrastructure.Persistence;
 using Flit.Identity.Infrastructure.Persistence.Seed;
 using Flit.Identity.Infrastructure.Security;
+using Flit.Identity.Infrastructure.Tenancy;
+using Flit.Identity.Rbac;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<IdentityDbContext>(o =>
     o.UseNpgsql(builder.Configuration.GetConnectionString("Identity")));
+builder.Services.AddScoped<ITenantContext, TenantContext>();
 builder.Services.AddScoped<IPasswordHasher, Argon2PasswordHasher>();
 builder.Services.AddSingleton<RsaJwtService>();
 builder.Services.AddScoped<PermissionResolver>();
@@ -16,6 +19,7 @@ builder.Services.AddScoped<LoginHandler>();
 builder.Services.AddScoped<RefreshHandler>();
 builder.Services.AddScoped<LogoutHandler>();
 builder.Services.AddScoped<MeHandler>();
+builder.Services.AddSingleton<AuthorizationService>();
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
@@ -31,10 +35,12 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseMiddleware<JwtCookieAuthenticationMiddleware>();
+app.UseMiddleware<TenantResolutionMiddleware>();
 app.UseAuthorization();
 
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
 app.MapAuthEndpoints();
+app.MapRbacEndpoints();
 
 app.Run();
 

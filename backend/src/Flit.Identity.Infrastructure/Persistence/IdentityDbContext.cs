@@ -1,10 +1,13 @@
 using Flit.Identity.Infrastructure.Persistence.Entities;
+using Flit.Identity.Infrastructure.Tenancy;
 using Microsoft.EntityFrameworkCore;
 
 namespace Flit.Identity.Infrastructure.Persistence;
 
-public class IdentityDbContext(DbContextOptions<IdentityDbContext> options) : DbContext(options)
+public class IdentityDbContext(DbContextOptions<IdentityDbContext> options, ITenantContext tenantContext)
+    : DbContext(options)
 {
+    private readonly ITenantContext _tenant = tenantContext;
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
@@ -35,6 +38,8 @@ public class IdentityDbContext(DbContextOptions<IdentityDbContext> options) : Db
             e.HasKey(x => x.Id);
             e.HasIndex(x => new { x.TenantId, x.Name }).IsUnique();
             e.HasOne(x => x.Tenant).WithMany(t => t.Roles).HasForeignKey(x => x.TenantId);
+            e.HasQueryFilter(r =>
+                _tenant.CurrentTenantId == null || r.TenantId == _tenant.CurrentTenantId);
         });
 
         modelBuilder.Entity<Permission>(e =>

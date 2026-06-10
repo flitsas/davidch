@@ -8,4 +8,6 @@ public static class ApiErrorCodes
     public const string Forbidden = "FORBIDDEN";
     public const string ValidationError = "VALIDATION_ERROR";
     public const string RateLimited = "RATE_LIMITED";
+    public const string RoleHasUsers = "ROLE_HAS_USERS";
+    public const string NotFound = "NOT_FOUND";
 }
