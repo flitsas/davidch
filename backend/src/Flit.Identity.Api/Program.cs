@@ -4,7 +4,10 @@ using Flit.Identity.Infrastructure.Persistence;
 using Flit.Identity.Infrastructure.Persistence.Seed;
 using Flit.Identity.Infrastructure.Security;
 using Flit.Identity.Infrastructure.Tenancy;
+using Flit.Identity.Notifications;
 using Flit.Identity.Rbac;
+using Flit.Identity.Users;
+using Flit.Identity.Users.Endpoints;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +22,9 @@ builder.Services.AddScoped<LoginHandler>();
 builder.Services.AddScoped<RefreshHandler>();
 builder.Services.AddScoped<LogoutHandler>();
 builder.Services.AddScoped<MeHandler>();
+builder.Services.AddScoped<ActivateHandler>();
+builder.Services.AddSingleton<IEmailSender, EmailSender>();
+builder.Services.AddScoped<InviteUserHandler>();
 builder.Services.AddSingleton<AuthorizationService>();
 builder.Services.AddAuthorization();
 
@@ -41,6 +47,7 @@ app.UseAuthorization();
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
 app.MapAuthEndpoints();
 app.MapRbacEndpoints();
+app.MapUsersEndpoints();
 
 app.Run();
 

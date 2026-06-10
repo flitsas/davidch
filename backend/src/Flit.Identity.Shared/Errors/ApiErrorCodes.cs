@@ -10,4 +10,5 @@ public static class ApiErrorCodes
     public const string RateLimited = "RATE_LIMITED";
     public const string RoleHasUsers = "ROLE_HAS_USERS";
     public const string NotFound = "NOT_FOUND";
+    public const string InvitationTokenInvalid = "INVITATION_TOKEN_INVALID";
 }

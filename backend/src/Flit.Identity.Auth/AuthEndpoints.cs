@@ -22,6 +22,9 @@ public static class AuthEndpoints
         group.MapGet("/me", (MeHandler handler, HttpContext ctx, CancellationToken ct) =>
             handler.HandleAsync(ctx, ct));
 
+        group.MapPost("/activate", (ActivateRequest req, ActivateHandler handler, CancellationToken ct) =>
+            handler.HandleAsync(req, ct));
+
         return app;
     }
 }
