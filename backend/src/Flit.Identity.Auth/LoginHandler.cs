@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text.Json.Serialization;
 using Flit.Identity.Infrastructure.Audit;
 using Flit.Identity.Infrastructure.Persistence;
 using Flit.Identity.Infrastructure.Persistence.Entities;
@@ -11,7 +12,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Flit.Identity.Auth;
 
-public record LoginRequest(string Email, string Password);
+public record LoginRequest(
+    [property: JsonPropertyName("email")] string Email,
+    [property: JsonPropertyName("password")] string Password);
 
 public sealed class LoginHandler(
     IdentityDbContext db,

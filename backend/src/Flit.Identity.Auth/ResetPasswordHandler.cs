@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Flit.Identity.Infrastructure.Persistence;
 using Flit.Identity.Infrastructure.Security;
 using Flit.Identity.Shared.Errors;
@@ -6,7 +7,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Flit.Identity.Auth;
 
-public record ResetPasswordRequest(string Token, string NewPassword);
+public record ResetPasswordRequest(
+    [property: JsonPropertyName("token")] string Token,
+    [property: JsonPropertyName("new_password")] string NewPassword);
 
 public sealed class ResetPasswordHandler(
     IdentityDbContext db,

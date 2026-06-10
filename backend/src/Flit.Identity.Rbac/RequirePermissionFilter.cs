@@ -60,12 +60,16 @@ public static class RequirePermissionExtensions
     {
         return builder.AddEndpointFilterFactory((factoryContext, next) =>
         {
-            var filter = new RequirePermissionFilter(
-                permissionKey,
-                scope,
-                factoryContext.ApplicationServices.GetRequiredService<AuthorizationService>(),
-                factoryContext.ApplicationServices.GetRequiredService<AuditService>());
-            return invocationContext => filter.InvokeAsync(invocationContext, next);
+            return async invocationContext =>
+            {
+                var services = invocationContext.HttpContext.RequestServices;
+                var filter = new RequirePermissionFilter(
+                    permissionKey,
+                    scope,
+                    services.GetRequiredService<AuthorizationService>(),
+                    services.GetRequiredService<AuditService>());
+                return await filter.InvokeAsync(invocationContext, next);
+            };
         });
     }
 }

@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Flit.Identity.Infrastructure.Persistence;
 using Flit.Identity.Infrastructure.Security;
 using Flit.Identity.Shared.Domain;
@@ -7,7 +8,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Flit.Identity.Auth;
 
-public record ActivateRequest(string Token, string Password);
+public record ActivateRequest(
+    [property: JsonPropertyName("token")] string Token,
+    [property: JsonPropertyName("password")] string Password);
 
 public sealed class ActivateHandler(IdentityDbContext db, IPasswordHasher hasher)
 {

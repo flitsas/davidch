@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Flit.Identity.Infrastructure.Persistence;
 using Flit.Identity.Infrastructure.Tenancy;
 using Flit.Identity.Rbac;
@@ -94,7 +95,8 @@ public static class UsersEndpoints
                 u.Status.ToString(),
                 u.TenantId,
                 u.CreatedAt,
-                u.ActivatedAt))
+                u.ActivatedAt,
+                u.UserRoles.Select(ur => ur.RoleId).ToArray()))
             .ToListAsync(ct);
 
         return Results.Ok(users);
@@ -106,5 +108,6 @@ public static class UsersEndpoints
         string Status,
         Guid? TenantId,
         DateTimeOffset CreatedAt,
-        DateTimeOffset? ActivatedAt);
+        DateTimeOffset? ActivatedAt,
+        [property: JsonPropertyName("role_ids")] Guid[] RoleIds);
 }

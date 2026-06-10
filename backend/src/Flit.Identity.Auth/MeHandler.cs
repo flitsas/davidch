@@ -35,8 +35,13 @@ public sealed class MeHandler(IdentityDbContext db, RsaJwtService jwt)
             return Results.Json(new { code = ApiErrorCodes.TokenExpired }, statusCode: StatusCodes.Status401Unauthorized);
         }
 
-        var userId = Guid.Parse(principal.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
-        var user = await db.Users.AsNoTracking().SingleOrDefaultAsync(u => u.Id == userId, ct);
+        var userId = principal.GetUserId();
+        if (userId is null)
+        {
+            return Results.Json(new { code = ApiErrorCodes.TokenExpired }, statusCode: StatusCodes.Status401Unauthorized);
+        }
+
+        var user = await db.Users.AsNoTracking().SingleOrDefaultAsync(u => u.Id == userId.Value, ct);
         if (user is null)
         {
             return Results.Json(new { code = ApiErrorCodes.TokenExpired }, statusCode: StatusCodes.Status401Unauthorized);
@@ -51,7 +56,11 @@ public sealed class MeHandler(IdentityDbContext db, RsaJwtService jwt)
                 statusCode: StatusCodes.Status403Forbidden);
         }
 
-        var roles = principal.FindAll("roles").Select(c => c.Value).ToList();
+        var roles = principal.Claims
+            .Where(c => c.Type is "roles" or ClaimTypes.Role)
+            .Select(c => c.Value)
+            .Distinct()
+            .ToList();
         var permissions = principal.FindAll("permissions")
             .Select(c =>
             {

@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text.Json.Serialization;
 using Flit.Identity.Infrastructure.Persistence;
 using Flit.Identity.Infrastructure.Persistence.Entities;
 using Flit.Identity.Infrastructure.Security;
@@ -10,7 +11,8 @@ using Microsoft.Extensions.Configuration;
 
 namespace Flit.Identity.Auth;
 
-public record ForgotPasswordRequest(string Email);
+public record ForgotPasswordRequest(
+    [property: JsonPropertyName("email")] string Email);
 
 public sealed class ForgotPasswordHandler(
     IdentityDbContext db,

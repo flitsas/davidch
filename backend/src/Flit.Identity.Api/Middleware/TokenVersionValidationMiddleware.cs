@@ -1,6 +1,5 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using Flit.Identity.Infrastructure.Persistence;
+using Flit.Identity.Shared.Auth;
 using Flit.Identity.Shared.Errors;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,20 +9,19 @@ public sealed class TokenVersionValidationMiddleware(RequestDelegate next)
 {
     public async Task InvokeAsync(HttpContext context, IdentityDbContext db)
     {
-        var sub = context.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-        if (sub is null)
+        var userId = context.User.GetUserId();
+        if (userId is null)
         {
             await next(context);
             return;
         }
 
-        var claimVersion = int.Parse(context.User.FindFirstValue("token_version") ?? "0");
-        var userId = Guid.Parse(sub);
+        var claimVersion = int.Parse(context.User.FindFirst("token_version")?.Value ?? "0");
 
         if (!context.Items.ContainsKey("DbTokenVersion"))
         {
             var dbVersion = await db.Users.AsNoTracking()
-                .Where(u => u.Id == userId)
+                .Where(u => u.Id == userId.Value)
                 .Select(u => (int?)u.TokenVersion)
                 .SingleOrDefaultAsync(context.RequestAborted);
 
