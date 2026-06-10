@@ -36,6 +36,9 @@ public static class RolesEndpoints
         group.MapDelete("/{id:guid}", DeleteRoleAsync)
             .RequirePermission("roles:delete", PermissionScope.Tenant);
 
+        group.MapPost("/{id:guid}/migrate", MigrateRoleAsync)
+            .RequirePermission("roles:delete", PermissionScope.Tenant);
+
         return app;
     }
 
@@ -214,6 +217,90 @@ public static class RolesEndpoints
         return Results.NoContent();
     }
 
+    private static async Task<IResult> MigrateRoleAsync(
+        Guid id,
+        MigrateRoleRequest req,
+        IdentityDbContext db,
+        SessionRevocationService revocation,
+        CancellationToken ct)
+    {
+        if (id == req.ReplacementRoleId)
+        {
+            return Results.Json(
+                new { code = ApiErrorCodes.ValidationError, message = "Replacement role must differ from source role." },
+                statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        var sourceRole = await db.Roles
+            .Include(r => r.UserRoles)
+            .Include(r => r.RolePermissions)
+            .SingleOrDefaultAsync(r => r.Id == id, ct);
+
+        if (sourceRole is null)
+        {
+            return Results.Json(
+                new { code = ApiErrorCodes.NotFound },
+                statusCode: StatusCodes.Status404NotFound);
+        }
+
+        if (sourceRole.IsSystem)
+        {
+            return Results.Json(
+                new { code = ApiErrorCodes.Forbidden, message = "System roles cannot be migrated." },
+                statusCode: StatusCodes.Status403Forbidden);
+        }
+
+        var replacementRole = await db.Roles
+            .SingleOrDefaultAsync(r => r.Id == req.ReplacementRoleId, ct);
+
+        if (replacementRole is null)
+        {
+            return Results.Json(
+                new { code = ApiErrorCodes.ValidationError, message = "Replacement role not found." },
+                statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        if (replacementRole.IsSystem)
+        {
+            return Results.Json(
+                new { code = ApiErrorCodes.ValidationError, message = "Cannot migrate to a system role." },
+                statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        if (sourceRole.TenantId != replacementRole.TenantId)
+        {
+            return Results.Json(
+                new { code = ApiErrorCodes.ValidationError, message = "Replacement role must belong to the same tenant." },
+                statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        var affectedUserIds = sourceRole.UserRoles.Select(ur => ur.UserId).Distinct().ToList();
+
+        foreach (var userId in affectedUserIds)
+        {
+            var hasReplacement = await db.UserRoles
+                .AnyAsync(ur => ur.UserId == userId && ur.RoleId == replacementRole.Id, ct);
+
+            if (!hasReplacement)
+            {
+                db.UserRoles.Add(new UserRole { UserId = userId, RoleId = replacementRole.Id });
+            }
+        }
+
+        db.UserRoles.RemoveRange(sourceRole.UserRoles);
+        db.RolePermissions.RemoveRange(sourceRole.RolePermissions);
+        db.Roles.Remove(sourceRole);
+
+        await db.SaveChangesAsync(ct);
+
+        foreach (var userId in affectedUserIds)
+        {
+            await revocation.RevokeAllSessionsAsync(userId, ct);
+        }
+
+        return Results.NoContent();
+    }
+
     private static async Task<IResult> DeleteRoleAsync(
         Guid id,
         IdentityDbContext db,
@@ -252,6 +339,8 @@ public static class RolesEndpoints
 
     public record CreateRoleRequest(string Name);
     public record UpdateRoleRequest(string Name);
+    public record MigrateRoleRequest(
+        [property: JsonPropertyName("replacement_role_id")] Guid ReplacementRoleId);
     public record SetRolePermissionsRequest(IReadOnlyList<RolePermissionEntry> Permissions);
     public record RolePermissionEntry(
         [property: JsonPropertyName("permission_id")] Guid PermissionId,

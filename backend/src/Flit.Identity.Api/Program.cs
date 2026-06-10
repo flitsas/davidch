@@ -33,6 +33,7 @@ builder.Services.AddScoped<ForceResetHandler>();
 builder.Services.AddScoped<SetUserRolesHandler>();
 builder.Services.AddScoped<BlockUserHandler>();
 builder.Services.AddSingleton<AuthorizationService>();
+builder.Services.AddSingleton<RoleConflictAnalyzer>();
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
