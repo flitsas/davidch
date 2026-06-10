@@ -81,6 +81,7 @@ public sealed class IdentityWebApplicationFactory : WebApplicationFactory<Progra
 
         var usersCreate = await db.Permissions.SingleAsync(p => p.Key == "users:create");
         var usersRead = await db.Permissions.SingleAsync(p => p.Key == "users:read");
+        var usersUpdate = await db.Permissions.SingleAsync(p => p.Key == "users:update");
 
         var adminRole = new Role
         {
@@ -93,7 +94,8 @@ public sealed class IdentityWebApplicationFactory : WebApplicationFactory<Progra
         db.Roles.Add(adminRole);
         db.RolePermissions.AddRange(
             new RolePermission { RoleId = adminRole.Id, PermissionId = usersCreate.Id, Scope = PermissionScope.Tenant },
-            new RolePermission { RoleId = adminRole.Id, PermissionId = usersRead.Id, Scope = PermissionScope.Tenant });
+            new RolePermission { RoleId = adminRole.Id, PermissionId = usersRead.Id, Scope = PermissionScope.Tenant },
+            new RolePermission { RoleId = adminRole.Id, PermissionId = usersUpdate.Id, Scope = PermissionScope.Tenant });
 
         var operatorRole = new Role
         {
@@ -146,6 +148,83 @@ public sealed class IdentityWebApplicationFactory : WebApplicationFactory<Progra
     }
 
     public string? GetLatestInvitationToken(string email) => _emailSender.ExtractToken(email);
+
+    public string? GetLatestResetToken(string email) => _emailSender.ExtractResetToken(email);
+
+    public async Task<ActiveUserInfo> CreateActiveUserAsync(string? email = null, string password = "SecurePass!123")
+    {
+        await EnsureTenantSeededAsync();
+        email ??= $"active.{Guid.NewGuid():N}@tenant-a.com";
+
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+        var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = email.ToLowerInvariant(),
+            PasswordHash = hasher.Hash(password),
+            TenantId = TenantId,
+            Status = UserStatus.Active,
+            TokenVersion = 1,
+            CreatedAt = DateTimeOffset.UtcNow,
+            ActivatedAt = DateTimeOffset.UtcNow
+        };
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
+
+        return new ActiveUserInfo(user.Id, user.Email, password);
+    }
+
+    public async Task<IReadOnlyDictionary<string, string>> LoginAndGetCookiesAsync(
+        string email,
+        string password = "SecurePass!123")
+    {
+        var client = CreateClient();
+        var login = await client.PostAsJsonAsync("/api/auth/login", new { email, password });
+        login.EnsureSuccessStatusCode();
+        return ParseCookies(login.Headers.GetValues("Set-Cookie"));
+    }
+
+    public async Task<HttpResponseMessage> SendWithCookiesAsync(
+        string url,
+        IReadOnlyDictionary<string, string> cookies,
+        HttpMethod? method = null)
+    {
+        var client = CreateClient();
+        var request = new HttpRequestMessage(method ?? HttpMethod.Get, url);
+        request.Headers.Add("Cookie", FormatCookieHeader(cookies));
+        return await client.SendAsync(request);
+    }
+
+    public async Task<string> CreateSelfServiceResetTokenAsync(string email)
+    {
+        var response = await AnonymousClient.PostAsJsonAsync("/api/auth/forgot-password", new { email });
+        response.EnsureSuccessStatusCode();
+        var token = GetLatestResetToken(email);
+        return token ?? throw new InvalidOperationException($"No reset token captured for {email}.");
+    }
+
+    private static IReadOnlyDictionary<string, string> ParseCookies(IEnumerable<string> setCookieHeaders)
+    {
+        var cookies = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var header in setCookieHeaders)
+        {
+            var pair = header.Split(';')[0].Split('=', 2);
+            if (pair.Length == 2)
+            {
+                cookies[pair[0]] = pair[1];
+            }
+        }
+
+        return cookies;
+    }
+
+    private static string FormatCookieHeader(IReadOnlyDictionary<string, string> cookies) =>
+        string.Join("; ", cookies.Select(c => $"{c.Key}={c.Value}"));
+
+    public sealed record ActiveUserInfo(Guid Id, string Email, string Password);
 
     public async Task InitializeAsync()
     {

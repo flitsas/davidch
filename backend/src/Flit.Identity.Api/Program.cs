@@ -23,8 +23,13 @@ builder.Services.AddScoped<RefreshHandler>();
 builder.Services.AddScoped<LogoutHandler>();
 builder.Services.AddScoped<MeHandler>();
 builder.Services.AddScoped<ActivateHandler>();
+builder.Services.AddScoped<ForgotPasswordHandler>();
+builder.Services.AddScoped<ResetPasswordHandler>();
+builder.Services.AddScoped<SessionRevocationService>();
+builder.Services.AddSingleton<ForgotPasswordRateLimiter>();
 builder.Services.AddSingleton<IEmailSender, EmailSender>();
 builder.Services.AddScoped<InviteUserHandler>();
+builder.Services.AddScoped<ForceResetHandler>();
 builder.Services.AddSingleton<AuthorizationService>();
 builder.Services.AddAuthorization();
 

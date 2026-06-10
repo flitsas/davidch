@@ -25,6 +25,12 @@ public static class AuthEndpoints
         group.MapPost("/activate", (ActivateRequest req, ActivateHandler handler, CancellationToken ct) =>
             handler.HandleAsync(req, ct));
 
+        group.MapPost("/forgot-password", (ForgotPasswordRequest req, ForgotPasswordHandler handler, HttpContext ctx, CancellationToken ct) =>
+            handler.HandleAsync(req, ctx, ct));
+
+        group.MapPost("/reset-password", (ResetPasswordRequest req, ResetPasswordHandler handler, CancellationToken ct) =>
+            handler.HandleAsync(req, ct));
+
         return app;
     }
 }

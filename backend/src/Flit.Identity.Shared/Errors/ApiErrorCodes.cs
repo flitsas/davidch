@@ -11,4 +11,5 @@ public static class ApiErrorCodes
     public const string RoleHasUsers = "ROLE_HAS_USERS";
     public const string NotFound = "NOT_FOUND";
     public const string InvitationTokenInvalid = "INVITATION_TOKEN_INVALID";
+    public const string ResetTokenInvalid = "RESET_TOKEN_INVALID";
 }

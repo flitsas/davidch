@@ -22,7 +22,20 @@ public static class UsersEndpoints
         group.MapGet("/", ListUsersAsync)
             .RequirePermission("users:read", PermissionScope.Tenant);
 
+        group.MapPost("/{id:guid}/force-reset", ForceResetAsync)
+            .RequirePermission("users:update", PermissionScope.Tenant);
+
         return app;
+    }
+
+    private static Task<IResult> ForceResetAsync(
+        Guid id,
+        ForceResetHandler handler,
+        HttpContext ctx,
+        CancellationToken ct)
+    {
+        var admin = (CurrentUser)ctx.Items["CurrentUser"]!;
+        return handler.HandleAsync(id, admin, ct);
     }
 
     private static Task<IResult> InviteUserAsync(
