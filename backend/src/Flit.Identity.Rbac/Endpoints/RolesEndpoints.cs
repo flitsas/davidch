@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Flit.Identity.Auth;
 using Flit.Identity.Infrastructure.Persistence;
 using Flit.Identity.Infrastructure.Persistence.Entities;
 using Flit.Identity.Infrastructure.Tenancy;
@@ -152,6 +153,7 @@ public static class RolesEndpoints
         Guid id,
         SetRolePermissionsRequest req,
         IdentityDbContext db,
+        SessionRevocationService revocation,
         CancellationToken ct)
     {
         var role = await db.Roles
@@ -197,6 +199,17 @@ public static class RolesEndpoints
         }
 
         await db.SaveChangesAsync(ct);
+
+        var affectedUserIds = await db.UserRoles
+            .Where(ur => ur.RoleId == id)
+            .Select(ur => ur.UserId)
+            .Distinct()
+            .ToListAsync(ct);
+
+        foreach (var userId in affectedUserIds)
+        {
+            await revocation.RevokeAllSessionsAsync(userId, ct);
+        }
 
         return Results.NoContent();
     }

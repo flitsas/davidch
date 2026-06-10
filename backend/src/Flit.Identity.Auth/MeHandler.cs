@@ -45,6 +45,7 @@ public sealed class MeHandler(IdentityDbContext db, RsaJwtService jwt)
         var claimVersion = int.Parse(principal.FindFirstValue("token_version") ?? "0");
         if (claimVersion != user.TokenVersion)
         {
+            http.Response.Headers["X-Session-Revoked"] = "true";
             return Results.Json(
                 new { code = ApiErrorCodes.SessionRevoked, message = "Session revoked." },
                 statusCode: StatusCodes.Status403Forbidden);

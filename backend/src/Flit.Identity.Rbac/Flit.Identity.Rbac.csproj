@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\Flit.Identity.Auth\Flit.Identity.Auth.csproj" />
     <ProjectReference Include="..\Flit.Identity.Infrastructure\Flit.Identity.Infrastructure.csproj" />
     <ProjectReference Include="..\Flit.Identity.Shared\Flit.Identity.Shared.csproj" />
   </ItemGroup>

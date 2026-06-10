@@ -30,6 +30,8 @@ builder.Services.AddSingleton<ForgotPasswordRateLimiter>();
 builder.Services.AddSingleton<IEmailSender, EmailSender>();
 builder.Services.AddScoped<InviteUserHandler>();
 builder.Services.AddScoped<ForceResetHandler>();
+builder.Services.AddScoped<SetUserRolesHandler>();
+builder.Services.AddScoped<BlockUserHandler>();
 builder.Services.AddSingleton<AuthorizationService>();
 builder.Services.AddAuthorization();
 
@@ -46,6 +48,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseMiddleware<JwtCookieAuthenticationMiddleware>();
+app.UseMiddleware<TokenVersionValidationMiddleware>();
 app.UseMiddleware<TenantResolutionMiddleware>();
 app.UseAuthorization();
 

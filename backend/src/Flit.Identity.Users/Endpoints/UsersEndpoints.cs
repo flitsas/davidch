@@ -22,10 +22,37 @@ public static class UsersEndpoints
         group.MapGet("/", ListUsersAsync)
             .RequirePermission("users:read", PermissionScope.Tenant);
 
+        group.MapPut("/{id:guid}/roles", SetUserRolesAsync)
+            .RequirePermission("users:update", PermissionScope.Tenant);
+
         group.MapPost("/{id:guid}/force-reset", ForceResetAsync)
             .RequirePermission("users:update", PermissionScope.Tenant);
 
+        group.MapPost("/{id:guid}/block", BlockUserAsync)
+            .RequirePermission("users:update", PermissionScope.Tenant);
+
         return app;
+    }
+
+    private static Task<IResult> SetUserRolesAsync(
+        Guid id,
+        SetUserRolesRequest req,
+        SetUserRolesHandler handler,
+        HttpContext ctx,
+        CancellationToken ct)
+    {
+        var admin = (CurrentUser)ctx.Items["CurrentUser"]!;
+        return handler.HandleAsync(id, req, admin, ct);
+    }
+
+    private static Task<IResult> BlockUserAsync(
+        Guid id,
+        BlockUserHandler handler,
+        HttpContext ctx,
+        CancellationToken ct)
+    {
+        var admin = (CurrentUser)ctx.Items["CurrentUser"]!;
+        return handler.HandleAsync(id, admin, ct);
     }
 
     private static Task<IResult> ForceResetAsync(

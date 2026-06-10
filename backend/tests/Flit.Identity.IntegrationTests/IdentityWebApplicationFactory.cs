@@ -26,6 +26,7 @@ public sealed class IdentityWebApplicationFactory : WebApplicationFactory<Progra
 
     public Guid TenantId { get; private set; }
     public Guid TenantOperatorRoleId { get; private set; }
+    public Guid TenantAdminRoleId { get; private set; }
     public Guid TenantAdminUserId { get; private set; }
 
     public string TenantAdminEmail => "admin@tenant-a.com";
@@ -92,6 +93,7 @@ public sealed class IdentityWebApplicationFactory : WebApplicationFactory<Progra
             CreatedAt = DateTimeOffset.UtcNow
         };
         db.Roles.Add(adminRole);
+        TenantAdminRoleId = adminRole.Id;
         db.RolePermissions.AddRange(
             new RolePermission { RoleId = adminRole.Id, PermissionId = usersCreate.Id, Scope = PermissionScope.Tenant },
             new RolePermission { RoleId = adminRole.Id, PermissionId = usersRead.Id, Scope = PermissionScope.Tenant },
