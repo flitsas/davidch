@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:e2e:identity": "playwright test e2e/identity"
+    "test:e2e:identity": "playwright test e2e/identity",
+    "docker:build": "docker build -t flit-frontend .",
+    "docker:run": "docker compose -f ../docker/docker-compose.yml up frontend"
   },
   "dependencies": {
     "next": "16.2.9",

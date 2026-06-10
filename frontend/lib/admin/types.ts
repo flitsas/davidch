@@ -2,9 +2,16 @@ export type UserSummary = {
   id: string;
   email: string;
   status: string;
+  role_ids: string[];
   tenantId: string | null;
   createdAt: string;
   activatedAt: string | null;
+};
+
+export type TenantSummary = {
+  id: string;
+  name: string;
+  slug: string;
 };
 
 export type RoleSummary = {

@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getSession, hasPermission } from "@/lib/auth/session";
+import { LogoutButton } from "@/components/auth/LogoutButton";
+import { getSessionOrRedirect, hasPermission } from "@/lib/auth/session";
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  const session = await getSessionOrRedirect();
 
   const canUsers = hasPermission(session, "users:read");
   const canRoles = hasPermission(session, "roles:read");
@@ -43,7 +43,10 @@ export default async function AdminLayout({
               </Link>
             )}
           </nav>
-          <span className="ml-auto text-sm text-zinc-600">{session.email}</span>
+          <span className="ml-auto flex items-center gap-4 text-sm text-zinc-600">
+            {session.email}
+            <LogoutButton />
+          </span>
         </div>
       </header>
       <main className="mx-auto max-w-5xl p-6">{children}</main>

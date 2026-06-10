@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { apiFetch } from "@/lib/auth/api-client";
-import { getSession, hasPermission } from "@/lib/auth/session";
-import type { PermissionCatalogItem, RoleDetail } from "@/lib/admin/types";
+import { getSessionOrRedirect, hasPermission } from "@/lib/auth/session";
+import type { PermissionCatalogItem, RoleDetail, RoleSummary } from "@/lib/admin/types";
 import { RolePermissionsEditor } from "@/components/admin/RolePermissionsEditor";
 
 export default async function RoleDetailPage({
@@ -11,13 +11,13 @@ export default async function RoleDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const session = await getSession();
-  if (!session) redirect("/login");
+  const session = await getSessionOrRedirect();
   if (!hasPermission(session, "roles:read")) redirect("/");
 
-  const [roleRes, permsRes] = await Promise.all([
+  const [roleRes, permsRes, allRolesRes] = await Promise.all([
     apiFetch(`/api/roles/${id}`),
     apiFetch("/api/permissions"),
+    apiFetch("/api/roles"),
   ]);
 
   if (!roleRes.ok) {
@@ -33,6 +33,7 @@ export default async function RoleDetailPage({
 
   const role: RoleDetail = await roleRes.json();
   const catalog: PermissionCatalogItem[] = permsRes.ok ? await permsRes.json() : [];
+  const allRoles: RoleSummary[] = allRolesRes.ok ? await allRolesRes.json() : [];
 
   return (
     <div className="space-y-4">
@@ -43,7 +44,7 @@ export default async function RoleDetailPage({
         <h1 className="text-2xl font-semibold">{role.name}</h1>
       </div>
       {hasPermission(session, "roles:update") ? (
-        <RolePermissionsEditor role={role} catalog={catalog} />
+        <RolePermissionsEditor role={role} catalog={catalog} allRoles={allRoles} />
       ) : (
         <p className="text-sm text-zinc-600">Solo lectura.</p>
       )}

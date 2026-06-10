@@ -1,16 +1,15 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Can } from "@/components/auth/Can";
 import { SessionRevokedBanner } from "@/components/auth/SessionRevokedBanner";
-import { getSession } from "@/lib/auth/session";
+import { LogoutButton } from "@/components/auth/LogoutButton";
+import { getSessionOrRedirect } from "@/lib/auth/session";
 
 export default async function HomePage({
   searchParams,
 }: {
   searchParams: Promise<{ revoked?: string }>;
 }) {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  const session = await getSessionOrRedirect();
 
   const params = await searchParams;
 
@@ -19,7 +18,10 @@ export default async function HomePage({
       {params.revoked === "1" && <SessionRevokedBanner />}
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">FLIT Identidad</h1>
-        <span className="text-sm text-zinc-600">{session.email}</span>
+        <div className="flex items-center gap-4 text-sm text-zinc-600">
+          <span>{session.email}</span>
+          <LogoutButton />
+        </div>
       </header>
       <p className="text-zinc-700">
         Sesión activa. Roles: {session.roles.join(", ") || "—"}

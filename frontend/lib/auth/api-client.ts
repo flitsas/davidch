@@ -29,7 +29,10 @@ export async function apiFetch(path: string, init: RequestInit = {}) {
 
   if (res.status === 403) {
     const body = await res.clone().json().catch(() => ({}));
-    if (body.code === "SESSION_REVOKED") {
+    if (
+      body.code === "SESSION_REVOKED" ||
+      res.headers.get("X-Session-Revoked") === "true"
+    ) {
       throw new SessionRevokedError();
     }
   }

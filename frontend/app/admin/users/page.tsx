@@ -1,27 +1,33 @@
 import { redirect } from "next/navigation";
 import { apiFetch } from "@/lib/auth/api-client";
-import { getSession, hasPermission } from "@/lib/auth/session";
-import type { RoleSummary, UserSummary } from "@/lib/admin/types";
+import { getSessionOrRedirect, hasPermission } from "@/lib/auth/session";
+import type { RoleSummary, TenantSummary, UserSummary } from "@/lib/admin/types";
 import { InviteUserForm } from "@/components/admin/InviteUserForm";
 import { UserRolesEditor } from "@/components/admin/UserRolesEditor";
+import { UserActions } from "@/components/admin/UserActions";
 
 export default async function AdminUsersPage() {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  const session = await getSessionOrRedirect();
   if (!hasPermission(session, "users:read")) redirect("/");
 
-  const [usersRes, rolesRes] = await Promise.all([
+  const tenantsPromise = session.isSuperAdmin ? apiFetch("/api/tenants") : null;
+  const [usersRes, rolesRes, tenantsRes] = await Promise.all([
     apiFetch("/api/users"),
     apiFetch("/api/roles"),
+    tenantsPromise,
   ]);
 
   const users: UserSummary[] = usersRes.ok ? await usersRes.json() : [];
   const roles: RoleSummary[] = rolesRes.ok ? await rolesRes.json() : [];
+  const tenants: TenantSummary[] =
+    tenantsRes?.ok ? await tenantsRes.json() : [];
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Usuarios</h1>
-      {hasPermission(session, "users:create") && <InviteUserForm roles={roles} />}
+      {hasPermission(session, "users:create") && (
+        <InviteUserForm roles={roles} tenants={tenants} isSuperAdmin={session.isSuperAdmin} />
+      )}
       <section className="space-y-2">
         <h2 className="font-medium">Listado</h2>
         {users.length === 0 ? (
@@ -34,12 +40,16 @@ export default async function AdminUsersPage() {
                 <span className="rounded bg-zinc-100 px-2 py-0.5 text-xs">{user.status}</span>
               </div>
               {hasPermission(session, "users:update") && (
-                <UserRolesEditor
-                  userId={user.id}
-                  userEmail={user.email}
-                  currentRoleIds={[]}
-                  roles={roles}
-                />
+                <>
+                  <UserActions userId={user.id} userEmail={user.email} />
+                  <UserRolesEditor
+                    key={`${user.id}-${(user.role_ids ?? []).join(",")}`}
+                    userId={user.id}
+                    userEmail={user.email}
+                    currentRoleIds={user.role_ids ?? []}
+                    roles={roles}
+                  />
+                </>
               )}
             </div>
           ))

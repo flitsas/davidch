@@ -1,17 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is the FLIT Identity frontend (Next.js App Router).
 
-## Getting Started
+## FLIT Identity (local)
 
-First, run the development server:
+### Start stack
+
+```bash
+cd ../docker
+cp .env.example .env   # if needed
+docker compose up -d
+```
+
+- Frontend: http://localhost:3000
+- API direct: http://localhost:5080/api/health
+- Mailhog: http://localhost:8025
+
+### Bootstrap login
+
+- Email: `super@flit.local`
+- Password: value of `IDENTITY_BOOTSTRAP_PASSWORD` in `docker/.env` (default `ChangeMe!123`)
+
+### E2E tests
+
+```bash
+npm install
+npx playwright install chromium
+E2E_ADMIN_EMAIL=super@flit.local E2E_ADMIN_PASSWORD=ChangeMe!123 \
+  npx playwright test e2e/identity
+```
+
+## Getting Started (dev only)
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.

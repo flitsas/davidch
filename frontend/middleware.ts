@@ -25,7 +25,10 @@ export async function middleware(req: NextRequest) {
   });
 
   if (!refreshRes.ok) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    const revoked = refreshRes.headers.get("X-Session-Revoked") === "true";
+    const url = new URL("/login", req.url);
+    if (revoked) url.searchParams.set("reason", "session_revoked");
+    return NextResponse.redirect(url);
   }
 
   const response = NextResponse.next();

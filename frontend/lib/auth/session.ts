@@ -1,4 +1,5 @@
-import { apiFetch } from "./api-client";
+import { redirect } from "next/navigation";
+import { apiFetch, SessionRevokedError } from "./api-client";
 
 export type PermissionScope = "Global" | "Tenant" | "Own";
 
@@ -15,6 +16,19 @@ export async function getSession(): Promise<MeResponse | null> {
   const res = await apiFetch("/api/auth/me");
   if (!res.ok) return null;
   return res.json();
+}
+
+export async function getSessionOrRedirect(): Promise<MeResponse> {
+  try {
+    const session = await getSession();
+    if (!session) redirect("/login");
+    return session;
+  } catch (e) {
+    if (e instanceof SessionRevokedError) {
+      redirect("/login?reason=session_revoked");
+    }
+    throw e;
+  }
 }
 
 export function hasPermission(

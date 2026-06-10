@@ -2,16 +2,18 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { PermissionCatalogItem, RoleDetail } from "@/lib/admin/types";
+import type { PermissionCatalogItem, RoleDetail, RoleSummary } from "@/lib/admin/types";
 
 const SCOPES = ["Tenant", "Own", "Global"] as const;
 
 export function RolePermissionsEditor({
   role,
   catalog,
+  allRoles,
 }: {
   role: RoleDetail;
   catalog: PermissionCatalogItem[];
+  allRoles: RoleSummary[];
 }) {
   const router = useRouter();
   const initial = useMemo(() => {
@@ -24,6 +26,9 @@ export function RolePermissionsEditor({
 
   const [selected, setSelected] = useState<Map<string, string>>(initial);
   const [message, setMessage] = useState<string | null>(null);
+  const [showMigrate, setShowMigrate] = useState(false);
+  const [migrationTargetId, setMigrationTargetId] = useState("");
+  const [affectedUsers, setAffectedUsers] = useState<number | null>(null);
 
   function toggle(permId: string, scope: string) {
     setSelected((prev) => {
@@ -67,7 +72,11 @@ export function RolePermissionsEditor({
     });
     if (res.status === 409) {
       const body = await res.json();
-      setMessage(`Rol con ${body.affected_users ?? "?"} usuarios. Usa migración.`);
+      setAffectedUsers(body.affected_users ?? null);
+      setShowMigrate(true);
+      setMessage(
+        `Rol con ${body.affected_users ?? "?"} usuarios. Selecciona un rol de reemplazo.`
+      );
       return;
     }
     if (!res.ok) {
@@ -79,12 +88,14 @@ export function RolePermissionsEditor({
   }
 
   async function migrate() {
-    const replacement = prompt("ID del rol de reemplazo:");
-    if (!replacement) return;
+    if (!migrationTargetId) {
+      setMessage("Selecciona un rol de reemplazo");
+      return;
+    }
     const res = await fetch(`/api/roles/${role.id}/migrate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ replacement_role_id: replacement }),
+      body: JSON.stringify({ replacement_role_id: migrationTargetId }),
       credentials: "include",
     });
     if (!res.ok) {
@@ -98,6 +109,8 @@ export function RolePermissionsEditor({
   if (role.isSystem) {
     return <p className="text-sm text-zinc-600">Rol de sistema — no editable.</p>;
   }
+
+  const replacementOptions = allRoles.filter((r) => r.id !== role.id && !r.isSystem);
 
   return (
     <div className="space-y-4">
@@ -150,14 +163,30 @@ export function RolePermissionsEditor({
         >
           Eliminar rol
         </button>
-        <button
-          type="button"
-          onClick={migrate}
-          className="rounded border border-zinc-300 px-3 py-2 text-sm"
-        >
-          Migrar usuarios
-        </button>
       </div>
+      {showMigrate && (
+        <div className="flex flex-wrap items-center gap-2 rounded border border-amber-200 bg-amber-50 p-3">
+          <select
+            className="rounded border border-zinc-300 px-2 py-1 text-sm"
+            value={migrationTargetId}
+            onChange={(e) => setMigrationTargetId(e.target.value)}
+          >
+            <option value="">Rol de reemplazo…</option>
+            {replacementOptions.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={migrate}
+            className="rounded border border-zinc-300 px-2 py-1 text-sm hover:bg-white"
+          >
+            Migrar{affectedUsers ? ` (${affectedUsers} usuarios)` : ""}
+          </button>
+        </div>
+      )}
       {message && <p className="text-sm text-zinc-700">{message}</p>}
     </div>
   );

@@ -1,13 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { apiFetch } from "@/lib/auth/api-client";
-import { getSession, hasPermission } from "@/lib/auth/session";
+import { getSessionOrRedirect, hasPermission } from "@/lib/auth/session";
 import type { RoleSummary } from "@/lib/admin/types";
 import { CreateRoleForm } from "@/components/admin/CreateRoleForm";
 
 export default async function AdminRolesPage() {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  const session = await getSessionOrRedirect();
   if (!hasPermission(session, "roles:read")) redirect("/");
 
   const res = await apiFetch("/api/roles");
