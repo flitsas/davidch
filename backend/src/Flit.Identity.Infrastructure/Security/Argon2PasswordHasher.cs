@@ -1,0 +1,37 @@
+using System.Security.Cryptography;
+using System.Text;
+using Konscious.Security.Cryptography;
+
+namespace Flit.Identity.Infrastructure.Security;
+
+public sealed class Argon2PasswordHasher : IPasswordHasher
+{
+    public string Hash(string password)
+    {
+        var salt = RandomNumberGenerator.GetBytes(16);
+        using var argon2 = new Argon2id(Encoding.UTF8.GetBytes(password))
+        {
+            Salt = salt,
+            DegreeOfParallelism = 2,
+            MemorySize = 65536,
+            Iterations = 3
+        };
+        var hash = argon2.GetBytes(32);
+        return $"$argon2id$v=19$m=65536,t=3,p=2${Convert.ToBase64String(salt)}${Convert.ToBase64String(hash)}";
+    }
+
+    public bool Verify(string password, string encoded)
+    {
+        var parts = encoded.Split('$', StringSplitOptions.RemoveEmptyEntries);
+        var salt = Convert.FromBase64String(parts[3]);
+        var expected = Convert.FromBase64String(parts[4]);
+        using var argon2 = new Argon2id(Encoding.UTF8.GetBytes(password))
+        {
+            Salt = salt,
+            DegreeOfParallelism = 2,
+            MemorySize = 65536,
+            Iterations = 3
+        };
+        return CryptographicOperations.FixedTimeEquals(argon2.GetBytes(32), expected);
+    }
+}

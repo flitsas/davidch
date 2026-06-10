@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Flit.Identity.Api\Flit.Identity.Api.csproj" />
+    <ProjectReference Include="..\..\src\Flit.Identity.Infrastructure\Flit.Identity.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
