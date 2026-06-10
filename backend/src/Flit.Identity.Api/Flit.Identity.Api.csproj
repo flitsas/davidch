@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Flit.Identity.Auth\Flit.Identity.Auth.csproj" />
+    <ProjectReference Include="..\Flit.Identity.Users\Flit.Identity.Users.csproj" />
+    <ProjectReference Include="..\Flit.Identity.Rbac\Flit.Identity.Rbac.csproj" />
+    <ProjectReference Include="..\Flit.Identity.Notifications\Flit.Identity.Notifications.csproj" />
+    <ProjectReference Include="..\Flit.Identity.Infrastructure\Flit.Identity.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

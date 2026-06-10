@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Flit.Identity.Api/Flit.Identity.Api.csproj" />
+    <Project Path="src/Flit.Identity.Auth/Flit.Identity.Auth.csproj" />
+    <Project Path="src/Flit.Identity.Infrastructure/Flit.Identity.Infrastructure.csproj" />
+    <Project Path="src/Flit.Identity.Notifications/Flit.Identity.Notifications.csproj" />
+    <Project Path="src/Flit.Identity.Rbac/Flit.Identity.Rbac.csproj" />
+    <Project Path="src/Flit.Identity.Shared/Flit.Identity.Shared.csproj" />
+    <Project Path="src/Flit.Identity.Users/Flit.Identity.Users.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Flit.Identity.IntegrationTests/Flit.Identity.IntegrationTests.csproj" />
+    <Project Path="tests/Flit.Identity.UnitTests/Flit.Identity.UnitTests.csproj" />
+  </Folder>
+</Solution>

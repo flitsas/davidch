@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: flit
+      POSTGRES_PASSWORD: flit_dev
+      POSTGRES_DB: flit_identity
+    ports:
+      - "5432:5432"
+    volumes:
+      - flit_pg_data:/var/lib/postgresql/data
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  flit_pg_data:
