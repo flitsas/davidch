@@ -19,6 +19,8 @@ public static class CompaniesAdminEndpoints
         group.MapGet("/index", GetIndexAsync);
         group.MapPost("/", CreateCompanyAsync);
         group.MapGet("/{id:guid}", GetCompanyAsync);
+        group.MapPatch("/{id:guid}", UpdateCompanyAsync);
+        group.MapPatch("/{id:guid}/status", UpdateCompanyStatusAsync);
 
         group.MapGet("/{id:guid}/config/matricula", GetMatriculaAsync);
         group.MapPut("/{id:guid}/config/matricula", PutMatriculaAsync);
@@ -28,9 +30,13 @@ public static class CompaniesAdminEndpoints
         group.MapPut("/{id:guid}/config/signatures", PutSignaturesAsync);
         group.MapGet("/{id:guid}/config/notifications", GetNotificationsAsync);
         group.MapPut("/{id:guid}/config/notifications", PutNotificationsAsync);
+        group.MapGet("/{id:guid}/config/payments", GetPaymentsAsync);
+        group.MapPut("/{id:guid}/config/payments", PutPaymentsAsync);
         group.MapGet("/{id:guid}/config/runt", GetRuntConfigAsync);
         group.MapPut("/{id:guid}/config/runt", PutRuntConfigAsync);
 
+        group.MapPost("/{id:guid}/exceptions/batch", AddExceptionsBatchAsync);
+        group.MapDelete("/{id:guid}/exceptions/batch", DeleteExceptionsBatchAsync);
 
         group.MapGet("/{id:guid}/traffic-authorities", GetTrafficAuthoritiesAsync);
         group.MapPatch("/{id:guid}/traffic-authorities", PatchTrafficAuthoritiesAsync);
@@ -92,12 +98,30 @@ public static class CompaniesAdminEndpoints
         Guid id, NotificationConfigDto body, CompanyConfigHandler handler, CancellationToken ct) =>
         handler.PutNotificationsAsync(id, body, ct);
 
+    private static Task<IResult> GetPaymentsAsync(Guid id, CompanyConfigHandler handler, CancellationToken ct) =>
+        handler.GetPaymentsAsync(id, ct);
+
+    private static Task<IResult> PutPaymentsAsync(
+        Guid id, PaymentConfigDto body, CompanyConfigHandler handler, CancellationToken ct) =>
+        handler.PutPaymentsAsync(id, body, ct);
+
     private static Task<IResult> GetRuntConfigAsync(Guid id, CompanyConfigHandler handler, CancellationToken ct) =>
         handler.GetRuntAsync(id, ct);
 
     private static Task<IResult> PutRuntConfigAsync(
         Guid id, RuntConfigDto body, CompanyConfigHandler handler, CancellationToken ct) =>
         handler.PutRuntAsync(id, body, ct);
+
+    private static Task<IResult> AddExceptionsBatchAsync(
+        Guid id, ExceptionsBatchRequest body, CompanyExceptionsHandler handler, CancellationToken ct) =>
+        handler.AddBatchAsync(id, body, ct);
+
+    private static Task<IResult> DeleteExceptionsBatchAsync(
+        Guid id,
+        [FromBody] ExceptionsBatchRequest body,
+        CompanyExceptionsHandler handler,
+        CancellationToken ct) =>
+        handler.DeleteBatchAsync(id, body, ct);
 
     private static Task<IResult> GetTrafficAuthoritiesAsync(
         Guid id,
