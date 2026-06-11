@@ -1,8 +1,10 @@
 using Flit.Companies.Admin.Auth;
+using Flit.Companies.Admin.Config;
 using Flit.Companies.Admin.Crud;
 using Flit.Companies.Admin.Index;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 
 namespace Flit.Companies.Admin.Endpoints;
@@ -17,8 +19,11 @@ public static class CompaniesAdminEndpoints
         group.MapGet("/index", GetIndexAsync);
         group.MapPost("/", CreateCompanyAsync);
         group.MapGet("/{id:guid}", GetCompanyAsync);
-        group.MapPatch("/{id:guid}", UpdateCompanyAsync);
-        group.MapPatch("/{id:guid}/status", UpdateCompanyStatusAsync);
+
+        group.MapGet("/{id:guid}/config/matricula", GetMatriculaAsync);
+        group.MapPut("/{id:guid}/config/matricula", PutMatriculaAsync);
+
+
 
         return app;
     }
@@ -48,6 +53,13 @@ public static class CompaniesAdminEndpoints
         CompanyCrudHandler handler,
         CancellationToken ct) =>
         handler.UpdateStatusAsync(id, request, ct);
+
+    private static Task<IResult> GetMatriculaAsync(Guid id, CompanyConfigHandler handler, CancellationToken ct) =>
+        handler.GetMatriculaAsync(id, ct);
+
+    private static Task<IResult> PutMatriculaAsync(
+        Guid id, MatriculaConfigDto body, CompanyConfigHandler handler, CancellationToken ct) =>
+        handler.PutMatriculaAsync(id, body, ct);
 
     private static Task<IResult> GetIndexAsync(
         CompanyIndexHandler handler,
