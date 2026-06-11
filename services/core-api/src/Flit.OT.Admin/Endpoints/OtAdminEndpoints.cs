@@ -1,3 +1,5 @@
+using Flit.Identity.Rbac;
+using Flit.Identity.Shared.Auth;
 using Flit.OT.Admin.Auth;
 using Flit.OT.Admin.Config;
 using Flit.OT.Admin.Crud;
@@ -24,7 +26,29 @@ public static class OtAdminEndpoints
         group.MapGet("/{id:guid}/config/integration", GetIntegrationAsync);
         group.MapPut("/{id:guid}/config/integration", PutIntegrationAsync);
 
+        group.MapGet("/{id:guid}/document-order/{procedureCode}", GetDocumentOrderAsync);
+        group.MapPut("/{id:guid}/document-order/{procedureCode}", PutDocumentOrderAsync);
+
         return app;
+    }
+
+    private static Task<IResult> GetDocumentOrderAsync(
+        Guid id,
+        string procedureCode,
+        OtDocumentOrderHandler handler,
+        CancellationToken ct) =>
+        handler.GetForProfileAsync(id, procedureCode, ct);
+
+    private static Task<IResult> PutDocumentOrderAsync(
+        Guid id,
+        string procedureCode,
+        PutDocumentOrderRequest request,
+        HttpContext http,
+        OtDocumentOrderHandler handler,
+        CancellationToken ct)
+    {
+        var user = http.Items["CurrentUser"] as CurrentUser;
+        return handler.PutForProfileAsync(id, procedureCode, request, user?.Id, ct);
     }
 
     private static Task<IResult> GetIntegrationAsync(

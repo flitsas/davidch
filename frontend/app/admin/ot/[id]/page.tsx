@@ -4,6 +4,7 @@ import type { OtDetail, OtTab } from "@/lib/admin/ot-types";
 import { parseOtTab } from "@/lib/admin/ot-types";
 import { otStatusLabel } from "@/lib/admin/ot-api";
 import { OtTabs } from "@/components/admin/OtTabs";
+import { DocumentosTab } from "@/components/admin/ot-tabs/DocumentosTab";
 import { IntegracionTab } from "@/components/admin/ot-tabs/IntegracionTab";
 import { PerfilTab } from "@/components/admin/ot-tabs/PerfilTab";
 import { PageHeaderCard } from "@/components/flit/Card";
@@ -18,11 +19,7 @@ function TabPanel({ ot, tab }: { ot: OtDetail; tab: OtTab }) {
     case "integracion":
       return <IntegracionTab otId={ot.id} apiBase="admin" />;
     case "documentos":
-      return (
-        <p className="text-sm text-flit-text-secondary">
-          El orden de documentos estará disponible en la siguiente historia.
-        </p>
-      );
+      return <DocumentosTab otId={ot.id} apiBase="admin" />;
   }
 }
 

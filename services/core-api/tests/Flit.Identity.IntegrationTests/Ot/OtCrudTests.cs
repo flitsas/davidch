@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Flit.Identity.Infrastructure.Persistence;
+using Flit.Identity.Infrastructure.Persistence.Entities;
 using Flit.OT.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -46,10 +47,26 @@ public class OtCrudTests : IClassFixture<IdentityWebApplicationFactory>
         var client = await SuperAdminAsync();
         var divipol = $"11001{Guid.NewGuid():N}"[..8];
 
+        Guid linkTenantId;
+        using (var tenantScope = _factory.Services.CreateScope())
+        {
+            var identityDb = tenantScope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+            linkTenantId = Guid.NewGuid();
+            identityDb.Tenants.Add(new Tenant
+            {
+                Id = linkTenantId,
+                Name = "OT Link Test Tenant",
+                Slug = $"link-{Guid.NewGuid():N}"[..20],
+                IsActive = true,
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+            await identityDb.SaveChangesAsync();
+        }
+
         var response = await client.PostAsJsonAsync("/api/v1/admin/ot", new
         {
             mode = "link",
-            tenant_id = _factory.TenantId,
+            tenant_id = linkTenantId,
             divipol_code = divipol,
             display_name = "OT Bogotá Test",
             status = "Active"

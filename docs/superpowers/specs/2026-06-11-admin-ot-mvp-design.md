@@ -1,7 +1,7 @@
 # Admin OT — Organismos de Tránsito (MVP)
 
 **Date:** 2026-06-11  
-**Status:** Proposed  
+**Status:** Approved  
 **ADO Feature:** [#9558](https://dev.azure.com/FlitDevOps/9032fb34-d178-4c62-b1f5-6805b56524b1/_workitems/edit/9558) — [ADMIN-OT] Administración de Organismos de Tránsito e Inteligencia Documental  
 **ADO User Stories:** [#9820](https://dev.azure.com/FlitDevOps/_workitems/edit/9820)–[#9824](https://dev.azure.com/FlitDevOps/_workitems/edit/9824) (HU-1..HU-4 MVP)  
 **Project:** FLIT 2.0 — FLIT EVOLUTION  

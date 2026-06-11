@@ -17,6 +17,13 @@ public static class DevTenantSeeder
     public const string TenantOperatorPassword = "SecurePass!123";
     public const string TenantSlug = "tenant-a";
 
+    private static readonly string[] TenantAdminPermissionKeys =
+    [
+        "users:create", "users:read", "users:update",
+        "roles:create", "roles:read", "roles:update", "roles:delete",
+        "tramites:update",
+    ];
+
     public static async Task SeedAsync(
         IdentityDbContext db,
         IPasswordHasher hasher,
@@ -24,6 +31,7 @@ public static class DevTenantSeeder
     {
         if (await db.Tenants.AnyAsync(ct))
         {
+            await EnsureTenantAdminPermissionsAsync(db, ct);
             return;
         }
 
@@ -37,14 +45,8 @@ public static class DevTenantSeeder
         };
         db.Tenants.Add(tenant);
 
-        var permissionKeys = new[]
-        {
-            "users:create", "users:read", "users:update",
-            "roles:create", "roles:read", "roles:update", "roles:delete",
-            "tramites:update"
-        };
         var permissions = await db.Permissions
-            .Where(p => permissionKeys.Contains(p.Key))
+            .Where(p => TenantAdminPermissionKeys.Contains(p.Key))
             .ToDictionaryAsync(p => p.Key, ct);
 
         var adminRole = new Role
@@ -57,7 +59,7 @@ public static class DevTenantSeeder
         };
         db.Roles.Add(adminRole);
 
-        foreach (var key in permissionKeys)
+        foreach (var key in TenantAdminPermissionKeys)
         {
             db.RolePermissions.Add(new RolePermission
             {
@@ -106,5 +108,59 @@ public static class DevTenantSeeder
         db.UserRoles.Add(new UserRole { UserId = operatorUser.Id, RoleId = operatorRole.Id });
 
         await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// Backfills new dev permissions when the demo tenant was seeded before a key existed.
+    /// </summary>
+    private static async Task EnsureTenantAdminPermissionsAsync(IdentityDbContext db, CancellationToken ct)
+    {
+        var tenant = await db.Tenants
+            .AsNoTracking()
+            .SingleOrDefaultAsync(t => t.Slug == TenantSlug, ct);
+
+        if (tenant is null)
+        {
+            return;
+        }
+
+        var adminRole = await db.Roles
+            .SingleOrDefaultAsync(r => r.TenantId == tenant.Id && r.Name == "TenantA-Admin", ct);
+
+        if (adminRole is null)
+        {
+            return;
+        }
+
+        var permissions = await db.Permissions
+            .Where(p => TenantAdminPermissionKeys.Contains(p.Key))
+            .ToDictionaryAsync(p => p.Key, ct);
+
+        var assigned = await db.RolePermissions
+            .Where(rp => rp.RoleId == adminRole.Id)
+            .Select(rp => rp.PermissionId)
+            .ToHashSetAsync(ct);
+
+        var changed = false;
+        foreach (var key in TenantAdminPermissionKeys)
+        {
+            if (!permissions.TryGetValue(key, out var permission) || assigned.Contains(permission.Id))
+            {
+                continue;
+            }
+
+            db.RolePermissions.Add(new RolePermission
+            {
+                RoleId = adminRole.Id,
+                PermissionId = permission.Id,
+                Scope = PermissionScope.Tenant,
+            });
+            changed = true;
+        }
+
+        if (changed)
+        {
+            await db.SaveChangesAsync(ct);
+        }
     }
 }
