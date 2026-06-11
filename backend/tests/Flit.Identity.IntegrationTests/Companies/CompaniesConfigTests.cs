@@ -1,4 +1,8 @@
+using System.Net;
 using System.Net.Http.Json;
+using Flit.Companies.Infrastructure.Persistence;
+using Flit.Companies.Shared.Domain;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Flit.Identity.IntegrationTests.Companies;
 
@@ -31,6 +35,34 @@ public class CompaniesConfigTests : IClassFixture<IdentityWebApplicationFactory>
         Assert.True(body.AllowMiscProcedures);
     }
 
+    [Fact]
+    public async Task Traffic_authorities_can_be_toggled()
+    {
+        if (!_factory.IsDockerAvailable)
+        {
+            return;
+        }
+
+        var companyId = await CreateCompanyAsync();
+        var client = await _factory.LoginAsSuperAdminAsync();
+
+        var list = await client.GetAsync(
+            $"/api/v1/admin/companies/{companyId}/traffic-authorities?page=1&pageSize=5");
+        list.EnsureSuccessStatusCode();
+        var authorities = await list.Content.ReadFromJsonAsync<TrafficListResponse>();
+        var code = authorities!.Items[0].AuthorityCode;
+
+        var patch = await client.PatchAsJsonAsync(
+            $"/api/v1/admin/companies/{companyId}/traffic-authorities",
+            new { updates = new[] { new { authority_code = code, is_enabled = true } } });
+        patch.EnsureSuccessStatusCode();
+
+        var verify = await client.GetAsync(
+            $"/api/v1/admin/companies/{companyId}/traffic-authorities?page=1&pageSize=5");
+        var updated = await verify.Content.ReadFromJsonAsync<TrafficListResponse>();
+        Assert.Contains(updated!.Items, i => i.AuthorityCode == code && i.IsEnabled);
+    }
+
     private async Task<Guid> CreateCompanyAsync()
     {
         var client = await _factory.LoginAsSuperAdminAsync();
@@ -50,4 +82,6 @@ public class CompaniesConfigTests : IClassFixture<IdentityWebApplicationFactory>
 
     private sealed record CreatedResponse(Guid Id, Guid TenantId);
     private sealed record MatriculaResponse(bool AllowNewVehicleFiling, bool AllowMiscProcedures);
+    private sealed record TrafficListResponse(List<TrafficItem> Items, int TotalCount, int Page, int PageSize);
+    private sealed record TrafficItem(string AuthorityCode, string Name, string? Region, bool IsEnabled);
 }
