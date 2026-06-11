@@ -1,4 +1,5 @@
 using Flit.OT.Admin.Auth;
+using Flit.OT.Admin.Crud;
 using Flit.OT.Admin.Index;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -14,9 +15,39 @@ public static class OtAdminEndpoints
             .RequireSuperAdmin();
 
         group.MapGet("/index", GetIndexAsync);
+        group.MapPost("/", CreateOtAsync);
+        group.MapGet("/{id:guid}", GetOtAsync);
+        group.MapPatch("/{id:guid}", UpdateOtAsync);
+        group.MapPatch("/{id:guid}/status", UpdateOtStatusAsync);
 
         return app;
     }
+
+    private static Task<IResult> CreateOtAsync(
+        CreateOtRequest request,
+        OtCrudHandler handler,
+        CancellationToken ct) =>
+        handler.CreateAsync(request, ct);
+
+    private static Task<IResult> GetOtAsync(
+        Guid id,
+        OtCrudHandler handler,
+        CancellationToken ct) =>
+        handler.GetDetailAsync(id, ct);
+
+    private static Task<IResult> UpdateOtAsync(
+        Guid id,
+        UpdateOtRequest request,
+        OtCrudHandler handler,
+        CancellationToken ct) =>
+        handler.UpdateAsync(id, request, ct);
+
+    private static Task<IResult> UpdateOtStatusAsync(
+        Guid id,
+        UpdateOtStatusRequest request,
+        OtCrudHandler handler,
+        CancellationToken ct) =>
+        handler.UpdateStatusAsync(id, request, ct);
 
     private static Task<IResult> GetIndexAsync(
         OtIndexHandler handler,
