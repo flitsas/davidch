@@ -45,6 +45,7 @@ builder.Services.AddScoped<BlockUserHandler>();
 builder.Services.AddScoped<CompanyIndexHandler>();
 builder.Services.AddScoped<CompanyCrudHandler>();
 builder.Services.AddScoped<CompanyConfigHandler>();
+builder.Services.AddScoped<CompanyExceptionsHandler>();
 builder.Services.AddSingleton<AuthorizationService>();
 builder.Services.AddSingleton<RoleConflictAnalyzer>();
 builder.Services.AddAuthorization();

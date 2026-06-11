@@ -22,6 +22,8 @@ public static class CompaniesAdminEndpoints
 
         group.MapGet("/{id:guid}/config/matricula", GetMatriculaAsync);
         group.MapPut("/{id:guid}/config/matricula", PutMatriculaAsync);
+        group.MapGet("/{id:guid}/config/traspasos", GetTraspasosAsync);
+        group.MapPut("/{id:guid}/config/traspasos", PutTraspasosAsync);
 
 
 
@@ -60,6 +62,13 @@ public static class CompaniesAdminEndpoints
     private static Task<IResult> PutMatriculaAsync(
         Guid id, MatriculaConfigDto body, CompanyConfigHandler handler, CancellationToken ct) =>
         handler.PutMatriculaAsync(id, body, ct);
+
+    private static Task<IResult> GetTraspasosAsync(Guid id, CompanyConfigHandler handler, CancellationToken ct) =>
+        handler.GetTraspasosAsync(id, ct);
+
+    private static Task<IResult> PutTraspasosAsync(
+        Guid id, TraspasoConfigDto body, CompanyConfigHandler handler, CancellationToken ct) =>
+        handler.PutTraspasosAsync(id, body, ct);
 
     private static Task<IResult> GetIndexAsync(
         CompanyIndexHandler handler,
