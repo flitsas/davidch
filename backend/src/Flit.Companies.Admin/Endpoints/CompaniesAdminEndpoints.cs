@@ -26,6 +26,8 @@ public static class CompaniesAdminEndpoints
         group.MapPut("/{id:guid}/config/traspasos", PutTraspasosAsync);
         group.MapGet("/{id:guid}/config/signatures", GetSignaturesAsync);
         group.MapPut("/{id:guid}/config/signatures", PutSignaturesAsync);
+        group.MapGet("/{id:guid}/config/notifications", GetNotificationsAsync);
+        group.MapPut("/{id:guid}/config/notifications", PutNotificationsAsync);
 
 
 
@@ -78,6 +80,13 @@ public static class CompaniesAdminEndpoints
     private static Task<IResult> PutSignaturesAsync(
         Guid id, SignatureConfigDto body, CompanyConfigHandler handler, CancellationToken ct) =>
         handler.PutSignaturesAsync(id, body, ct);
+
+    private static Task<IResult> GetNotificationsAsync(Guid id, CompanyConfigHandler handler, CancellationToken ct) =>
+        handler.GetNotificationsAsync(id, ct);
+
+    private static Task<IResult> PutNotificationsAsync(
+        Guid id, NotificationConfigDto body, CompanyConfigHandler handler, CancellationToken ct) =>
+        handler.PutNotificationsAsync(id, body, ct);
 
     private static Task<IResult> GetIndexAsync(
         CompanyIndexHandler handler,
