@@ -27,6 +27,7 @@
     <ProjectReference Include="..\..\src\Flit.Companies.Infrastructure\Flit.Companies.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Flit.Companies.Admin\Flit.Companies.Admin.csproj" />
     <ProjectReference Include="..\..\src\Flit.OT.Infrastructure\Flit.OT.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Flit.OT.Admin\Flit.OT.Admin.csproj" />
   </ItemGroup>
 
 </Project>
