@@ -2,6 +2,8 @@ using System.Net.Http.Json;
 using Flit.Identity.Infrastructure.Persistence;
 using Flit.Identity.Infrastructure.Persistence.Entities;
 using Flit.Identity.Infrastructure.Persistence.Seed;
+using Flit.OT.Infrastructure.Persistence;
+using Flit.OT.Infrastructure.Persistence.Seed;
 using Flit.Identity.Infrastructure.Security;
 using Flit.Identity.Notifications;
 using Flit.Identity.Shared.Domain;
@@ -74,7 +76,10 @@ public sealed class IdentityWebApplicationFactory : WebApplicationFactory<Progra
 
         await DevTenantSeeder.SeedAsync(db, hasher);
 
-        var tenant = await db.Tenants.SingleAsync(t => t.Slug == "tenant-a");
+        var otDb = scope.ServiceProvider.GetRequiredService<OtDbContext>();
+        await DevOtSeeder.SeedAsync(otDb, db);
+
+        var tenant = await db.Tenants.SingleAsync(t => t.Slug == DevTenantSeeder.TenantSlug);
         TenantId = tenant.Id;
 
         var adminRole = await db.Roles.SingleAsync(r =>
@@ -98,6 +103,17 @@ public sealed class IdentityWebApplicationFactory : WebApplicationFactory<Progra
         var client = CreateClient(new() { HandleCookies = true });
         var login = await client.PostAsJsonAsync("/api/auth/login",
             new { email = TenantAdminEmail, password = TenantAdminPassword });
+        login.EnsureSuccessStatusCode();
+        return client;
+    }
+
+    public async Task<HttpClient> LoginAsTenantOperatorAsync()
+    {
+        await EnsureTenantSeededAsync();
+
+        var client = CreateClient(new() { HandleCookies = true });
+        var login = await client.PostAsJsonAsync("/api/auth/login",
+            new { email = DevTenantSeeder.TenantOperatorEmail, password = DevTenantSeeder.TenantOperatorPassword });
         login.EnsureSuccessStatusCode();
         return client;
     }

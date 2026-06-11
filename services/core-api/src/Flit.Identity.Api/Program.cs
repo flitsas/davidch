@@ -2,9 +2,12 @@ using Flit.Companies.Admin.Config;
 using Flit.Companies.Admin.Endpoints;
 using Flit.Companies.Admin.Crud;
 using Flit.Companies.Admin.Index;
+using Flit.OT.Admin.Config;
 using Flit.OT.Admin.Crud;
 using Flit.OT.Admin.Endpoints;
 using Flit.OT.Admin.Index;
+using Flit.OT.Admin.Settings;
+using Flit.OT.Shared;
 using Flit.Companies.Runt;
 using Flit.Companies.Runt.Endpoints;
 using Flit.Companies.Infrastructure.Persistence;
@@ -58,6 +61,9 @@ builder.Services.AddScoped<CompanyExceptionsHandler>();
 builder.Services.AddScoped<CompanyTrafficAuthoritiesHandler>();
 builder.Services.AddScoped<OtIndexHandler>();
 builder.Services.AddScoped<OtCrudHandler>();
+builder.Services.AddScoped<OtIntegrationHandler>();
+builder.Services.AddScoped<OtSettingsHandler>();
+builder.Services.AddScoped<IOtIntegrationModeService, OtIntegrationModeService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<VerifikAdapter>();
 builder.Services.AddSingleton<IntempoStubAdapter>();
@@ -87,6 +93,10 @@ using (var scope = app.Services.CreateScope())
     var otDb = scope.ServiceProvider.GetRequiredService<OtDbContext>();
     await otDb.Database.MigrateAsync();
     await OtDbSeeder.SeedAsync(otDb);
+    if (app.Environment.IsDevelopment())
+    {
+        await DevOtSeeder.SeedAsync(otDb, db);
+    }
 }
 
 app.UseMiddleware<RateLimitingMiddleware>();
@@ -102,6 +112,7 @@ app.MapUsersEndpoints();
 app.MapTenantsEndpoints();
 app.MapCompaniesAdminEndpoints();
 app.MapOtAdminEndpoints();
+app.MapOtSettingsEndpoints();
 app.MapRuntEndpoints();
 
 app.Run();

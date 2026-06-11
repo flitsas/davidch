@@ -13,6 +13,9 @@ public static class DevTenantSeeder
 {
     public const string TenantAdminEmail = "admin@tenant-a.com";
     public const string TenantAdminPassword = "SecurePass!123";
+    public const string TenantOperatorEmail = "operator@tenant-a.com";
+    public const string TenantOperatorPassword = "SecurePass!123";
+    public const string TenantSlug = "tenant-a";
 
     public static async Task SeedAsync(
         IdentityDbContext db,
@@ -28,7 +31,7 @@ public static class DevTenantSeeder
         {
             Id = Guid.NewGuid(),
             Name = "Tenant A",
-            Slug = "tenant-a",
+            Slug = TenantSlug,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow
         };
@@ -37,7 +40,8 @@ public static class DevTenantSeeder
         var permissionKeys = new[]
         {
             "users:create", "users:read", "users:update",
-            "roles:create", "roles:read", "roles:update", "roles:delete"
+            "roles:create", "roles:read", "roles:update", "roles:delete",
+            "tramites:update"
         };
         var permissions = await db.Permissions
             .Where(p => permissionKeys.Contains(p.Key))
@@ -86,6 +90,20 @@ public static class DevTenantSeeder
         };
         db.Users.Add(adminUser);
         db.UserRoles.Add(new UserRole { UserId = adminUser.Id, RoleId = adminRole.Id });
+
+        var operatorUser = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = TenantOperatorEmail,
+            PasswordHash = hasher.Hash(TenantOperatorPassword),
+            TenantId = tenant.Id,
+            Status = UserStatus.Active,
+            TokenVersion = 1,
+            CreatedAt = DateTimeOffset.UtcNow,
+            ActivatedAt = DateTimeOffset.UtcNow
+        };
+        db.Users.Add(operatorUser);
+        db.UserRoles.Add(new UserRole { UserId = operatorUser.Id, RoleId = operatorRole.Id });
 
         await db.SaveChangesAsync(ct);
     }

@@ -1,4 +1,5 @@
 using Flit.OT.Admin.Auth;
+using Flit.OT.Admin.Config;
 using Flit.OT.Admin.Crud;
 using Flit.OT.Admin.Index;
 using Microsoft.AspNetCore.Builder;
@@ -20,8 +21,24 @@ public static class OtAdminEndpoints
         group.MapPatch("/{id:guid}", UpdateOtAsync);
         group.MapPatch("/{id:guid}/status", UpdateOtStatusAsync);
 
+        group.MapGet("/{id:guid}/config/integration", GetIntegrationAsync);
+        group.MapPut("/{id:guid}/config/integration", PutIntegrationAsync);
+
         return app;
     }
+
+    private static Task<IResult> GetIntegrationAsync(
+        Guid id,
+        OtIntegrationHandler handler,
+        CancellationToken ct) =>
+        handler.GetForProfileAsync(id, ct);
+
+    private static Task<IResult> PutIntegrationAsync(
+        Guid id,
+        PutIntegrationRequest request,
+        OtIntegrationHandler handler,
+        CancellationToken ct) =>
+        handler.PutForProfileAsync(id, request, ct);
 
     private static Task<IResult> CreateOtAsync(
         CreateOtRequest request,
