@@ -9,6 +9,7 @@
     <Project Path="src/Flit.Identity.Users/Flit.Identity.Users.csproj" />
     <Project Path="src/Flit.Companies.Shared/Flit.Companies.Shared.csproj" />
     <Project Path="src/Flit.Companies.Infrastructure/Flit.Companies.Infrastructure.csproj" />
+    <Project Path="src/Flit.Companies.Admin/Flit.Companies.Admin.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Flit.Identity.IntegrationTests/Flit.Identity.IntegrationTests.csproj" />

@@ -1,5 +1,7 @@
 using Flit.Companies.Infrastructure.Persistence;
 using Flit.Companies.Infrastructure.Persistence.Seed;
+using Flit.Companies.Admin.Endpoints;
+using Flit.Companies.Admin.Index;
 using Flit.Identity.Api.Middleware;
 using Flit.Identity.Auth;
 using Flit.Identity.Infrastructure.Audit;
@@ -38,6 +40,7 @@ builder.Services.AddScoped<InviteUserHandler>();
 builder.Services.AddScoped<ForceResetHandler>();
 builder.Services.AddScoped<SetUserRolesHandler>();
 builder.Services.AddScoped<BlockUserHandler>();
+builder.Services.AddScoped<CompanyIndexHandler>();
 builder.Services.AddSingleton<AuthorizationService>();
 builder.Services.AddSingleton<RoleConflictAnalyzer>();
 builder.Services.AddAuthorization();
@@ -70,6 +73,7 @@ app.MapAuthEndpoints();
 app.MapRbacEndpoints();
 app.MapUsersEndpoints();
 app.MapTenantsEndpoints();
+app.MapCompaniesAdminEndpoints();
 
 app.Run();
 
