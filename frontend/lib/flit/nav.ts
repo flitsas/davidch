@@ -12,6 +12,7 @@ export function buildAdminNav(session: MeResponse): NavItem[] {
   }
   if (session.isSuperAdmin) {
     items.push({ href: "/admin/companies", label: "Compañías" });
+    items.push({ href: "/admin/ot", label: "Organismos de tránsito" });
   }
 
   return items;
