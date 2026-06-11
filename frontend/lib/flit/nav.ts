@@ -15,5 +15,9 @@ export function buildAdminNav(session: MeResponse): NavItem[] {
     items.push({ href: "/admin/ot", label: "Organismos de tránsito" });
   }
 
+  if (hasPermission(session, "tramites:update") && !session.isSuperAdmin) {
+    items.push({ href: "/ot/settings/integracion", label: "Configuración OT" });
+  }
+
   return items;
 }
