@@ -5,17 +5,29 @@ import { parseCompanyTab } from "@/lib/admin/companies-types";
 import { companyStatusLabel } from "@/lib/admin/companies-api";
 import { CompanyTabs } from "@/components/admin/CompanyTabs";
 import { CompanyProfileForm } from "@/components/admin/CompanyProfileForm";
+import { MatriculaTab } from "@/components/admin/company-tabs/MatriculaTab";
+import { TraspasosTab } from "@/components/admin/company-tabs/TraspasosTab";
+import { ConfigEmpresaTab } from "@/components/admin/company-tabs/ConfigEmpresaTab";
 import { PageHeaderCard } from "@/components/flit/Card";
 import { FlitCard } from "@/components/flit/Card";
 import { FlitLink } from "@/components/flit/Link";
 import { StatusChip } from "@/components/flit/Chip";
 
-function TabPanel({ tab }: { tab: CompanyTab }) {
-  return (
-    <p className="text-sm text-flit-text-secondary">
-      Sección «{tab}» — contenido en entregas posteriores.
-    </p>
-  );
+function TabPanel({ companyId, tab }: { companyId: string; tab: CompanyTab }) {
+  switch (tab) {
+    case "matricula":
+      return <MatriculaTab companyId={companyId} />;
+    case "traspasos":
+      return <TraspasosTab companyId={companyId} />;
+    case "config-empresa":
+      return <ConfigEmpresaTab companyId={companyId} />;
+    case "contingencia":
+      return (
+        <p className="text-sm text-flit-text-secondary">
+          Contingencia — entrega posterior.
+        </p>
+      );
+  }
 }
 
 export default async function CompanyDetailPage({
@@ -74,7 +86,7 @@ export default async function CompanyDetailPage({
       <FlitCard>
         <CompanyTabs companyId={company.id} activeTab={activeTab} />
         <div className="pt-6">
-          <TabPanel tab={activeTab} />
+          <TabPanel companyId={company.id} tab={activeTab} />
         </div>
       </FlitCard>
     </>
