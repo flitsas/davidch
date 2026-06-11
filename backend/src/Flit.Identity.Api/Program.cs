@@ -48,6 +48,7 @@ builder.Services.AddScoped<CompanyIndexHandler>();
 builder.Services.AddScoped<CompanyCrudHandler>();
 builder.Services.AddScoped<CompanyConfigHandler>();
 builder.Services.AddScoped<CompanyExceptionsHandler>();
+builder.Services.AddScoped<CompanyTrafficAuthoritiesHandler>();
 builder.Services.AddSingleton<VerifikAdapter>();
 builder.Services.AddSingleton<IntempoStubAdapter>();
 builder.Services.AddScoped<RuntProxy>();

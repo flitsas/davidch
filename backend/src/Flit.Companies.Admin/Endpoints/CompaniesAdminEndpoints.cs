@@ -32,6 +32,8 @@ public static class CompaniesAdminEndpoints
         group.MapPut("/{id:guid}/config/runt", PutRuntConfigAsync);
 
 
+        group.MapGet("/{id:guid}/traffic-authorities", GetTrafficAuthoritiesAsync);
+        group.MapPatch("/{id:guid}/traffic-authorities", PatchTrafficAuthoritiesAsync);
 
         return app;
     }
@@ -96,6 +98,21 @@ public static class CompaniesAdminEndpoints
     private static Task<IResult> PutRuntConfigAsync(
         Guid id, RuntConfigDto body, CompanyConfigHandler handler, CancellationToken ct) =>
         handler.PutRuntAsync(id, body, ct);
+
+    private static Task<IResult> GetTrafficAuthoritiesAsync(
+        Guid id,
+        CompanyTrafficAuthoritiesHandler handler,
+        CancellationToken ct,
+        int page = 1,
+        int pageSize = 20) =>
+        handler.GetAsync(id, page, pageSize, ct);
+
+    private static Task<IResult> PatchTrafficAuthoritiesAsync(
+        Guid id,
+        TrafficAuthoritiesPatchRequest body,
+        CompanyTrafficAuthoritiesHandler handler,
+        CancellationToken ct) =>
+        handler.PatchAsync(id, body, ct);
 
     private static Task<IResult> GetIndexAsync(
         CompanyIndexHandler handler,
