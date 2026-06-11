@@ -2,10 +2,14 @@ using Flit.Companies.Admin.Config;
 using Flit.Companies.Admin.Endpoints;
 using Flit.Companies.Admin.Crud;
 using Flit.Companies.Admin.Index;
+using Flit.OT.Admin.Endpoints;
+using Flit.OT.Admin.Index;
 using Flit.Companies.Runt;
 using Flit.Companies.Runt.Endpoints;
 using Flit.Companies.Infrastructure.Persistence;
 using Flit.Companies.Infrastructure.Persistence.Seed;
+using Flit.OT.Infrastructure.Persistence;
+using Flit.OT.Infrastructure.Persistence.Seed;
 using Flit.Identity.Api.Middleware;
 using Flit.Identity.Auth;
 using Flit.Identity.Infrastructure.Audit;
@@ -24,6 +28,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<IdentityDbContext>(o =>
     o.UseNpgsql(builder.Configuration.GetConnectionString("Identity")));
 builder.Services.AddDbContext<CompaniesDbContext>(o =>
+    o.UseNpgsql(builder.Configuration.GetConnectionString("Identity")));
+builder.Services.AddDbContext<OtDbContext>(o =>
     o.UseNpgsql(builder.Configuration.GetConnectionString("Identity")));
 builder.Services.AddScoped<ITenantContext, TenantContext>();
 builder.Services.AddScoped<IPasswordHasher, Argon2PasswordHasher>();
@@ -49,6 +55,7 @@ builder.Services.AddScoped<CompanyCrudHandler>();
 builder.Services.AddScoped<CompanyConfigHandler>();
 builder.Services.AddScoped<CompanyExceptionsHandler>();
 builder.Services.AddScoped<CompanyTrafficAuthoritiesHandler>();
+builder.Services.AddScoped<OtIndexHandler>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<VerifikAdapter>();
 builder.Services.AddSingleton<IntempoStubAdapter>();
@@ -74,6 +81,10 @@ using (var scope = app.Services.CreateScope())
     var companiesDb = scope.ServiceProvider.GetRequiredService<CompaniesDbContext>();
     await companiesDb.Database.MigrateAsync();
     await CompaniesDbSeeder.SeedAsync(companiesDb);
+
+    var otDb = scope.ServiceProvider.GetRequiredService<OtDbContext>();
+    await otDb.Database.MigrateAsync();
+    await OtDbSeeder.SeedAsync(otDb);
 }
 
 app.UseMiddleware<RateLimitingMiddleware>();
@@ -88,6 +99,7 @@ app.MapRbacEndpoints();
 app.MapUsersEndpoints();
 app.MapTenantsEndpoints();
 app.MapCompaniesAdminEndpoints();
+app.MapOtAdminEndpoints();
 app.MapRuntEndpoints();
 
 app.Run();

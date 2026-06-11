@@ -9,6 +9,8 @@
     <ProjectReference Include="..\Flit.Companies.Infrastructure\Flit.Companies.Infrastructure.csproj" />
     <ProjectReference Include="..\Flit.Companies.Admin\Flit.Companies.Admin.csproj" />
     <ProjectReference Include="..\Flit.Companies.Runt\Flit.Companies.Runt.csproj" />
+    <ProjectReference Include="..\Flit.OT.Infrastructure\Flit.OT.Infrastructure.csproj" />
+    <ProjectReference Include="..\Flit.OT.Admin\Flit.OT.Admin.csproj" />
   </ItemGroup>
 
   <ItemGroup>
