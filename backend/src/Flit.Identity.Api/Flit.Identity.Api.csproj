@@ -6,6 +6,7 @@
     <ProjectReference Include="..\Flit.Identity.Rbac\Flit.Identity.Rbac.csproj" />
     <ProjectReference Include="..\Flit.Identity.Notifications\Flit.Identity.Notifications.csproj" />
     <ProjectReference Include="..\Flit.Identity.Infrastructure\Flit.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\Flit.Companies.Infrastructure\Flit.Companies.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -13,6 +14,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <ProjectReference Include="..\Flit.Companies.Infrastructure\Flit.Companies.Infrastructure.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

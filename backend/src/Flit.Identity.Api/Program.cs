@@ -1,3 +1,5 @@
+using Flit.Companies.Infrastructure.Persistence;
+using Flit.Companies.Infrastructure.Persistence.Seed;
 using Flit.Identity.Api.Middleware;
 using Flit.Identity.Auth;
 using Flit.Identity.Infrastructure.Audit;
@@ -13,6 +15,8 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddDbContext<CompaniesDbContext>(o =>
+    o.UseNpgsql(builder.Configuration.GetConnectionString("Identity")));
 builder.Services.AddDbContext<IdentityDbContext>(o =>
     o.UseNpgsql(builder.Configuration.GetConnectionString("Identity")));
 builder.Services.AddScoped<ITenantContext, TenantContext>();
@@ -50,6 +54,9 @@ using (var scope = app.Services.CreateScope())
     {
         await DevTenantSeeder.SeedAsync(db, hasher);
     }
+    var companiesDb = scope.ServiceProvider.GetRequiredService<CompaniesDbContext>();
+    await companiesDb.Database.MigrateAsync();
+    await CompaniesDbSeeder.SeedAsync(companiesDb);
 }
 
 app.UseMiddleware<RateLimitingMiddleware>();

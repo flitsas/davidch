@@ -24,6 +24,7 @@
     <ProjectReference Include="..\..\src\Flit.Identity.Api\Flit.Identity.Api.csproj" />
     <ProjectReference Include="..\..\src\Flit.Identity.Auth\Flit.Identity.Auth.csproj" />
     <ProjectReference Include="..\..\src\Flit.Identity.Infrastructure\Flit.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Flit.Companies.Infrastructure\Flit.Companies.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
