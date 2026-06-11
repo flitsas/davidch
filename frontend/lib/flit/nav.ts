@@ -10,6 +10,9 @@ export function buildAdminNav(session: MeResponse): NavItem[] {
   if (hasPermission(session, "roles:read")) {
     items.push({ href: "/admin/roles", label: "Roles" });
   }
+  if (session.isSuperAdmin) {
+    items.push({ href: "/admin/companies", label: "Compañías" });
+  }
 
   return items;
 }

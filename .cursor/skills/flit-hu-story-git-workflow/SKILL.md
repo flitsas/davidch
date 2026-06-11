@@ -19,6 +19,17 @@ One HU per branch, one branch at a time. Finish → summarize → **stop and wai
 
 **When NOT to use:** exploratory spikes, docs-only edits, or user explicitly requests multi-story branches.
 
+## Branch flow (repository)
+
+```
+feature/HU{id}-DCHICA-*  →  develop  →  main
+         (story work)      (QA/DEV)   (production)
+```
+
+- **PR target:** `develop` (integration + QA verification).
+- **Base for new story branches:** `develop` (not `main`).
+- **`main`:** receives merges from `develop` after QA sign-off (human/PO decision).
+
 ## Branch naming (mandatory)
 
 ```
@@ -41,21 +52,35 @@ feature/HU{storyId}-DCHICA-{descriptive-slug}
 ## Per-story cycle (strict order)
 
 ```
-1. READ   — HU in ADO (AC, dependencies, design spec section)
-2. BRANCH — from updated main (see commands below)
-3. BUILD  — implement only that HU's scope
-4. VERIFY — tests + build per flit-gestion-hu
-5. STOP   — post summary; do NOT start next HU
-6. WAIT   — user corrections/tweaks on same branch if needed
-7. NEXT   — only after explicit user go-ahead ("continue", "next story", "start #9805")
+1. READ     — HU in ADO (AC, dependencies, design spec section)
+2. ACTIVATE — set ADO state to Active + start comment (flit-gestion-hu Paso 1) — BEFORE any code
+3. BRANCH   — from updated `develop` (see commands below)
+4. BUILD    — implement only that HU's scope
+5. VERIFY   — tests + build per flit-gestion-hu
+6. STOP     — post summary; do NOT start next HU
+7. WAIT     — user corrections/tweaks on same branch if needed
+8. NEXT     — only after explicit user go-ahead ("continue", "next story", "start #9806")
 ```
+
+### ADO activation (mandatory before step 3)
+
+**Invoke `flit-gestion-hu` Paso 1** via ADO MCP **before** creating the branch or writing implementation code:
+
+1. `wit_update_work_item` → `System.State` = **`Active`**
+2. `wit_add_work_item_comment` (HTML) → inicio de desarrollo con mención mailto del supervisor
+
+```html
+<div>🤖 [Cursor Agent] usando <b>@skill-gestion-hu</b>: Iniciando desarrollo bajo supervisión de <a href="mailto:david.chica@flitsas.com">@David Chica</a></div>
+```
+
+**Red flag:** Branch created or code written while HU is still `New` in ADO.
 
 ### Git commands (each new HU)
 
 ```bash
-# 1. Return to main and sync
-git checkout main
-git pull origin main
+# 1. Return to develop and sync
+git checkout develop
+git pull origin develop
 
 # 2. Create story branch (replace ID and slug)
 git checkout -b feature/HU9804-DCHICA-schema-postgresql-ef-core
@@ -69,7 +94,7 @@ git commit -m "feat(companies): schema PostgreSQL y migraciones EF Core (#9804)"
 
 - Starting HU N+1 while HU N awaits review
 - Implementing multiple HUs on one branch
-- Force-push, amend after push, or merge to `main`
+- Force-push, amend after push, or merge to `develop` / `main` without user approval
 - Pushing to remote unless user asks
 
 ## End-of-story summary (required before waiting)
@@ -101,7 +126,7 @@ Waiting for your review before starting the next story.
 
 | Skill | When |
 |-------|------|
-| `flit-gestion-hu` | ADO Active → Resolved, build gate, QA handoff |
+| `flit-gestion-hu` | **Paso 1 Active** before code; **Paso 3 Resolved** after build passes |
 | `flit-azure-devops` | MCP/API for work item updates |
 | `flit-integration-ado` | Register GitHub PR on ADO after user opens PR |
 | Design spec in `docs/superpowers/specs/` | Architecture reference for the feature |
@@ -112,14 +137,16 @@ Waiting for your review before starting the next story.
 |--------|---------|
 | "Next story is tiny, I'll batch it" | One HU = one branch. Batch only if user explicitly allows. |
 | "I'll branch later" | Branch **before** first line of implementation code. |
+| "ADO state can wait" | **Active** + start comment **before** branch and code (flit-gestion-hu Paso 1). |
 | "Summary can wait until all stories done" | Summary + stop **after every** HU. |
 | "User said continue implicitly" | Need explicit approval for next HU. |
-| "Fix belongs on main" | Fixes for current HU stay on current story branch. |
+| "Fix belongs on develop" | Fixes for current HU stay on current story branch. |
 | "I'll push without asking" | Push only when user requests. |
 
 ## Red flags — STOP
 
-- Coding on `main` for story work
+- Coding on `develop` or `main` for story work
 - Two HUs on one branch
 - Moving to next story without user reply after summary
 - Branch name missing `HU{id}-DCHICA-`
+- HU still `New` in ADO when implementation starts

@@ -6,6 +6,9 @@
     <ProjectReference Include="..\Flit.Identity.Rbac\Flit.Identity.Rbac.csproj" />
     <ProjectReference Include="..\Flit.Identity.Notifications\Flit.Identity.Notifications.csproj" />
     <ProjectReference Include="..\Flit.Identity.Infrastructure\Flit.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\Flit.Companies.Infrastructure\Flit.Companies.Infrastructure.csproj" />
+    <ProjectReference Include="..\Flit.Companies.Admin\Flit.Companies.Admin.csproj" />
+    <ProjectReference Include="..\Flit.Companies.Runt\Flit.Companies.Runt.csproj" />
   </ItemGroup>
 
   <ItemGroup>

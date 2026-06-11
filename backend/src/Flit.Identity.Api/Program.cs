@@ -1,3 +1,11 @@
+using Flit.Companies.Admin.Config;
+using Flit.Companies.Admin.Endpoints;
+using Flit.Companies.Admin.Crud;
+using Flit.Companies.Admin.Index;
+using Flit.Companies.Runt;
+using Flit.Companies.Runt.Endpoints;
+using Flit.Companies.Infrastructure.Persistence;
+using Flit.Companies.Infrastructure.Persistence.Seed;
 using Flit.Identity.Api.Middleware;
 using Flit.Identity.Auth;
 using Flit.Identity.Infrastructure.Audit;
@@ -14,6 +22,8 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<IdentityDbContext>(o =>
+    o.UseNpgsql(builder.Configuration.GetConnectionString("Identity")));
+builder.Services.AddDbContext<CompaniesDbContext>(o =>
     o.UseNpgsql(builder.Configuration.GetConnectionString("Identity")));
 builder.Services.AddScoped<ITenantContext, TenantContext>();
 builder.Services.AddScoped<IPasswordHasher, Argon2PasswordHasher>();
@@ -34,6 +44,16 @@ builder.Services.AddScoped<InviteUserHandler>();
 builder.Services.AddScoped<ForceResetHandler>();
 builder.Services.AddScoped<SetUserRolesHandler>();
 builder.Services.AddScoped<BlockUserHandler>();
+builder.Services.AddScoped<CompanyIndexHandler>();
+builder.Services.AddScoped<CompanyCrudHandler>();
+builder.Services.AddScoped<CompanyConfigHandler>();
+builder.Services.AddScoped<CompanyExceptionsHandler>();
+builder.Services.AddScoped<CompanyTrafficAuthoritiesHandler>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<VerifikAdapter>();
+builder.Services.AddSingleton<IntempoStubAdapter>();
+builder.Services.AddScoped<RuntProxy>();
+builder.Services.AddScoped<RuntQueryHandler>();
 builder.Services.AddSingleton<AuthorizationService>();
 builder.Services.AddSingleton<RoleConflictAnalyzer>();
 builder.Services.AddAuthorization();
@@ -50,6 +70,10 @@ using (var scope = app.Services.CreateScope())
     {
         await DevTenantSeeder.SeedAsync(db, hasher);
     }
+
+    var companiesDb = scope.ServiceProvider.GetRequiredService<CompaniesDbContext>();
+    await companiesDb.Database.MigrateAsync();
+    await CompaniesDbSeeder.SeedAsync(companiesDb);
 }
 
 app.UseMiddleware<RateLimitingMiddleware>();
@@ -63,6 +87,8 @@ app.MapAuthEndpoints();
 app.MapRbacEndpoints();
 app.MapUsersEndpoints();
 app.MapTenantsEndpoints();
+app.MapCompaniesAdminEndpoints();
+app.MapRuntEndpoints();
 
 app.Run();
 
