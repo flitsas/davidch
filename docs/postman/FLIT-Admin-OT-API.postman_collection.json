@@ -1,0 +1,262 @@
+{
+  "info": {
+    "name": "FLIT Admin OT API",
+    "description": "# FLIT Admin OT API\n\nOrganismos de Tránsito (OT) — SuperAdmin provisioning and OT Admin settings.\n\n## Dev URLs (docker compose)\n\n| Component | URL |\n|-----------|-----|\n| Gateway | `http://127.0.0.1:40202` |\n| Core API (direct) | `http://127.0.0.1:40302` |\n\n## Auth\n\nCookie-based JWT (same as Identity). Run **Login SuperAdmin** or **Login Tenant Admin** first.\n\n| Role | Email | Password |\n|------|-------|----------|\n| SuperAdmin | `super@flit.local` | `FlitDev2026!` |\n| Tenant A Admin (OT) | `admin@tenant-a.com` | `SecurePass!123` |\n\n## SuperAdmin routes\n\nBase: `/api/v1/admin/ot` — requires `RequireSuperAdmin()`\n\n## OT Admin routes\n\nBase: `/api/v1/ot/settings` — JWT tenant match + `tramites:update`\n",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:40202", "description": "Gateway (or 40302 for core-api direct)" },
+    { "key": "superEmail", "value": "super@flit.local" },
+    { "key": "superPassword", "value": "FlitDev2026!" },
+    { "key": "tenantAdminEmail", "value": "admin@tenant-a.com" },
+    { "key": "tenantAdminPassword", "value": "SecurePass!123" },
+    { "key": "otId", "value": "", "description": "OT profile UUID from Create OT or Index" },
+    { "key": "procedureCode", "value": "MATRICULA_INICIAL" }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (pm.response.code === 200 || pm.response.code === 201) {",
+          "  try {",
+          "    const json = pm.response.json();",
+          "    if (json.id) pm.collectionVariables.set('otId', json.id);",
+          "    if (json.items && json.items[0]?.id) pm.collectionVariables.set('otId', json.items[0].id);",
+          "  } catch (e) {}",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login SuperAdmin",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{superEmail}}\",\n  \"password\": \"{{superPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": { "type": "noauth" }
+          }
+        },
+        {
+          "name": "Login Tenant Admin (OT)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{tenantAdminEmail}}\",\n  \"password\": \"{{tenantAdminPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/login",
+            "auth": { "type": "noauth" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "SuperAdmin OT",
+      "description": "Requires SuperAdmin session.",
+      "item": [
+        {
+          "name": "Index OT",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/ot/index?page=1&page_size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "ot", "index"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "page_size", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create OT (atomic)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mode\": \"create\",\n  \"divipol_code\": \"76001\",\n  \"display_name\": \"OT Demo Postman\",\n  \"slug\": \"ot-demo-postman\",\n  \"status\": \"Active\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/v1/admin/ot"
+          }
+        },
+        {
+          "name": "Get OT Detail",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/admin/ot/{{otId}}"
+          }
+        },
+        {
+          "name": "Update OT Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"divipol_code\": \"76001\",\n  \"display_name\": \"OT Demo Postman Updated\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/v1/admin/ot/{{otId}}"
+          }
+        },
+        {
+          "name": "Update OT Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Suspended\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/v1/admin/ot/{{otId}}/status"
+          }
+        },
+        {
+          "name": "Get Integration Config",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/admin/ot/{{otId}}/config/integration"
+          }
+        },
+        {
+          "name": "Put Integration Config",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"integration_mode\": \"Dashboard\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/v1/admin/ot/{{otId}}/config/integration"
+          }
+        },
+        {
+          "name": "Get Document Order",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/admin/ot/{{otId}}/document-order/{{procedureCode}}"
+          }
+        },
+        {
+          "name": "Put Document Order",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"document_type_code\": \"CEDULA\", \"position\": 1, \"is_included\": true },\n    { \"document_type_code\": \"FACTURA\", \"position\": 2, \"is_included\": true }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/v1/admin/ot/{{otId}}/document-order/{{procedureCode}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "OT Admin Settings",
+      "description": "Requires tenant admin with tramites:update on an OT tenant.",
+      "item": [
+        {
+          "name": "Get Integration",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/ot/settings/config/integration"
+          }
+        },
+        {
+          "name": "Put Integration",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"integration_mode\": \"Qx\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/v1/ot/settings/config/integration"
+          }
+        },
+        {
+          "name": "List Procedure Types",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/ot/settings/procedure-types"
+          }
+        },
+        {
+          "name": "Get Document Order",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/ot/settings/document-order/{{procedureCode}}"
+          }
+        },
+        {
+          "name": "Put Document Order",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"document_type_code\": \"CEDULA\", \"position\": 1, \"is_included\": true },\n    { \"document_type_code\": \"FACTURA\", \"position\": 2, \"is_included\": true }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/v1/ot/settings/document-order/{{procedureCode}}"
+          }
+        }
+      ]
+    }
+  ]
+}

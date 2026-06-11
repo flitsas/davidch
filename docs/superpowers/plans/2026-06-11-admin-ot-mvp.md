@@ -537,7 +537,7 @@ git commit -m "feat(ot): add document order drag-and-drop UI for SuperAdmin and 
 
 - [x] Update spec status to `Approved` in design doc
 - [x] Register PRs via `flit-integration-ado` skill (Modo A)
-- [ ] Optional: Postman collection `docs/postman/FLIT-Admin-OT-API.postman_collection.json`
+- [x] Optional: Postman collection `docs/postman/FLIT-Admin-OT-API.postman_collection.json`
 
 ---
 
