@@ -8,6 +8,9 @@ using Flit.OT.Admin.Endpoints;
 using Flit.OT.Admin.Index;
 using Flit.OT.Admin.Settings;
 using Flit.OT.Shared;
+using Flit.Procedures.Admin.Services;
+using Flit.Procedures.Infrastructure.Persistence;
+using Flit.Procedures.Shared;
 using Flit.Companies.Runt;
 using Flit.Companies.Runt.Endpoints;
 using Flit.Companies.Infrastructure.Persistence;
@@ -34,6 +37,8 @@ builder.Services.AddDbContext<IdentityDbContext>(o =>
 builder.Services.AddDbContext<CompaniesDbContext>(o =>
     o.UseNpgsql(builder.Configuration.GetConnectionString("Identity")));
 builder.Services.AddDbContext<OtDbContext>(o =>
+    o.UseNpgsql(builder.Configuration.GetConnectionString("Identity")));
+builder.Services.AddDbContext<ProceduresDbContext>(o =>
     o.UseNpgsql(builder.Configuration.GetConnectionString("Identity")));
 builder.Services.AddScoped<ITenantContext, TenantContext>();
 builder.Services.AddScoped<IPasswordHasher, Argon2PasswordHasher>();
@@ -66,6 +71,9 @@ builder.Services.AddScoped<OtDocumentOrderHandler>();
 builder.Services.AddScoped<OtSettingsHandler>();
 builder.Services.AddScoped<IOtIntegrationModeService, OtIntegrationModeService>();
 builder.Services.AddScoped<IOtDocumentOrderService, OtDocumentOrderService>();
+builder.Services.AddScoped<IProcedureDefinitionService, ProcedureDefinitionService>();
+builder.Services.AddScoped<IProcedureCatalogSync, ProcedureCatalogSync>();
+builder.Services.AddScoped<ProcedureTypeWriter>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<VerifikAdapter>();
 builder.Services.AddSingleton<IntempoStubAdapter>();
@@ -99,6 +107,9 @@ using (var scope = app.Services.CreateScope())
     {
         await DevOtSeeder.SeedAsync(otDb, db);
     }
+
+    var proceduresDb = scope.ServiceProvider.GetRequiredService<ProceduresDbContext>();
+    await proceduresDb.Database.MigrateAsync();
 }
 
 app.UseMiddleware<RateLimitingMiddleware>();

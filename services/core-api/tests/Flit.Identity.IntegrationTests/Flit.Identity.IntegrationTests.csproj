@@ -28,6 +28,9 @@
     <ProjectReference Include="..\..\src\Flit.Companies.Admin\Flit.Companies.Admin.csproj" />
     <ProjectReference Include="..\..\src\Flit.OT.Infrastructure\Flit.OT.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Flit.OT.Admin\Flit.OT.Admin.csproj" />
+    <ProjectReference Include="..\..\src\Flit.Procedures.Shared\Flit.Procedures.Shared.csproj" />
+    <ProjectReference Include="..\..\src\Flit.Procedures.Infrastructure\Flit.Procedures.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Flit.Procedures.Admin\Flit.Procedures.Admin.csproj" />
   </ItemGroup>
 
 </Project>

@@ -15,6 +15,9 @@ COPY src/Flit.Companies.Runt/Flit.Companies.Runt.csproj src/Flit.Companies.Runt/
 COPY src/Flit.OT.Shared/Flit.OT.Shared.csproj src/Flit.OT.Shared/
 COPY src/Flit.OT.Infrastructure/Flit.OT.Infrastructure.csproj src/Flit.OT.Infrastructure/
 COPY src/Flit.OT.Admin/Flit.OT.Admin.csproj src/Flit.OT.Admin/
+COPY src/Flit.Procedures.Shared/Flit.Procedures.Shared.csproj src/Flit.Procedures.Shared/
+COPY src/Flit.Procedures.Infrastructure/Flit.Procedures.Infrastructure.csproj src/Flit.Procedures.Infrastructure/
+COPY src/Flit.Procedures.Admin/Flit.Procedures.Admin.csproj src/Flit.Procedures.Admin/
 RUN dotnet restore src/Flit.Identity.Api/Flit.Identity.Api.csproj
 COPY src/ src/
 RUN dotnet publish src/Flit.Identity.Api/Flit.Identity.Api.csproj \
