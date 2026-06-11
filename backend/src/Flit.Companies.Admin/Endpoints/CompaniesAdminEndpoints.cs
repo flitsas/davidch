@@ -1,4 +1,5 @@
 using Flit.Companies.Admin.Auth;
+using Flit.Companies.Admin.Crud;
 using Flit.Companies.Admin.Index;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -14,9 +15,39 @@ public static class CompaniesAdminEndpoints
             .RequireSuperAdmin();
 
         group.MapGet("/index", GetIndexAsync);
+        group.MapPost("/", CreateCompanyAsync);
+        group.MapGet("/{id:guid}", GetCompanyAsync);
+        group.MapPatch("/{id:guid}", UpdateCompanyAsync);
+        group.MapPatch("/{id:guid}/status", UpdateCompanyStatusAsync);
 
         return app;
     }
+
+    private static Task<IResult> CreateCompanyAsync(
+        CreateCompanyRequest request,
+        CompanyCrudHandler handler,
+        CancellationToken ct) =>
+        handler.CreateAsync(request, ct);
+
+    private static Task<IResult> GetCompanyAsync(
+        Guid id,
+        CompanyCrudHandler handler,
+        CancellationToken ct) =>
+        handler.GetDetailAsync(id, ct);
+
+    private static Task<IResult> UpdateCompanyAsync(
+        Guid id,
+        UpdateCompanyRequest request,
+        CompanyCrudHandler handler,
+        CancellationToken ct) =>
+        handler.UpdateAsync(id, request, ct);
+
+    private static Task<IResult> UpdateCompanyStatusAsync(
+        Guid id,
+        UpdateCompanyStatusRequest request,
+        CompanyCrudHandler handler,
+        CancellationToken ct) =>
+        handler.UpdateStatusAsync(id, request, ct);
 
     private static Task<IResult> GetIndexAsync(
         CompanyIndexHandler handler,
