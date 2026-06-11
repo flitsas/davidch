@@ -17,14 +17,24 @@ docker compose up -d
 ### Bootstrap login
 
 - Email: `super@flit.local`
-- Password: value of `IDENTITY_BOOTSTRAP_PASSWORD` in `docker/.env` (default `ChangeMe!123`)
+- Password: value of `IDENTITY_BOOTSTRAP_PASSWORD` in `docker/.env` (default `FlitDev2026!`)
+
+Demo tenant (seeded on API startup when no tenants exist):
+
+- Tenant admin: `admin@tenant-a.com` / `SecurePass!123`
 
 ### E2E tests
 
 ```bash
 npm install
 npx playwright install chromium
-E2E_ADMIN_EMAIL=super@flit.local E2E_ADMIN_PASSWORD=ChangeMe!123 \
+npx playwright test e2e/identity
+```
+
+Override credentials if your `docker/.env` differs:
+
+```bash
+E2E_ADMIN_EMAIL=super@flit.local E2E_ADMIN_PASSWORD=FlitDev2026! \
   npx playwright test e2e/identity
 ```
 

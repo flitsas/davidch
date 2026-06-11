@@ -2,7 +2,11 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
+import { AuthShell } from "@/components/flit/AuthShell";
+import { GradientButton } from "@/components/flit/Button";
+import { PasswordInput } from "@/components/flit/Input";
+import { FlitLink } from "@/components/flit/Link";
+import { AlertCard } from "@/components/flit/Alert";
 
 function ActivateForm() {
   const router = useRouter();
@@ -41,50 +45,49 @@ function ActivateForm() {
 
   if (!token) {
     return (
-      <main className="mx-auto max-w-md p-8">
-        <p className="text-red-600">Enlace de activación inválido.</p>
-      </main>
+      <AuthShell title="Enlace inválido">
+        <AlertCard variant="danger">
+          El enlace de activación no es válido. Contacta al administrador para recibir
+          una nueva invitación.
+        </AlertCard>
+      </AuthShell>
     );
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center p-8">
-      <form onSubmit={onSubmit} className="space-y-4 rounded-lg border border-zinc-200 p-6 shadow-sm">
-        <h1 className="text-2xl font-semibold">Activar cuenta</h1>
-        <p className="text-sm text-zinc-600">Define tu contraseña para completar el registro.</p>
-        <input
-          className="w-full rounded border border-zinc-300 px-3 py-2"
-          type="password"
-          placeholder="Nueva contraseña"
+    <AuthShell
+      title="Activar cuenta"
+      subtitle="Define tu contraseña para completar el registro"
+      footer={<FlitLink href="/login">Ir a iniciar sesión</FlitLink>}
+    >
+      <form onSubmit={onSubmit} className="space-y-6">
+        <PasswordInput
+          label="Nueva contraseña"
+          name="password"
+          id="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
           minLength={8}
+          autoComplete="new-password"
+          placeholder="Mínimo 8 caracteres…"
         />
-        <input
-          className="w-full rounded border border-zinc-300 px-3 py-2"
-          type="password"
-          placeholder="Confirmar contraseña"
+        <PasswordInput
+          label="Confirmar contraseña"
+          name="confirm"
+          id="confirm"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           required
           minLength={8}
+          autoComplete="new-password"
+          error={error}
         />
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded bg-zinc-900 px-4 py-2 text-white disabled:opacity-50"
-        >
+        <GradientButton type="submit" fullWidth disabled={loading}>
           {loading ? "Activando…" : "Activar cuenta"}
-        </button>
-        <p className="text-center text-sm">
-          <Link href="/login" className="underline">
-            Ir a iniciar sesión
-          </Link>
-        </p>
+        </GradientButton>
       </form>
-    </main>
+    </AuthShell>
   );
 }
 

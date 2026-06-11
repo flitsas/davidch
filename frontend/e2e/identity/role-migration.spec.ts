@@ -13,16 +13,21 @@ test("delete role with users shows migration UI", async ({ page }) => {
   await page.goto("/admin/roles");
 
   const editLink = page.getByRole("link", { name: /editar permisos/i }).first();
-  if (!(await editLink.isVisible())) {
-    test.skip(true, "No editable roles available");
-    return;
-  }
+  await expect(editLink).toBeVisible();
   await editLink.click();
 
-  await page.getByRole("button", { name: /eliminar rol/i }).click();
+  await Promise.all([
+    page.waitForResponse(
+      (res) =>
+        res.request().method() === "DELETE" &&
+        res.url().includes("/api/roles/") &&
+        (res.status() === 409 || res.status() === 204)
+    ),
+    page.getByRole("button", { name: /eliminar rol/i }).click(),
+  ]);
 
-  const migratePanel = page.locator("select").filter({ hasText: /reemplazo/i });
-  const deleted = page.url().endsWith("/admin/roles");
-  const hasMigrate = await migratePanel.isVisible().catch(() => false);
+  const migrateSelect = page.getByLabel("Rol de reemplazo");
+  const deleted = /\/admin\/roles\/?$/.test(new URL(page.url()).pathname);
+  const hasMigrate = await migrateSelect.isVisible().catch(() => false);
   expect(hasMigrate || deleted).toBeTruthy();
 });

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { FlitButton, DangerButton } from "@/components/flit/Button";
 
 export function UserActions({ userId, userEmail }: { userId: string; userEmail: string }) {
   const router = useRouter();
@@ -43,24 +44,27 @@ export function UserActions({ userId, userEmail }: { userId: string; userEmail: 
   }
 
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-2">
-      <button
-        type="button"
+    <div className="flex flex-wrap items-center gap-2">
+      <FlitButton
+        variant="ghost"
         onClick={forceReset}
         disabled={loading !== null}
-        className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-50 disabled:opacity-50"
+        className="min-h-9 px-4 text-xs"
       >
-        {loading === "reset" ? "…" : "Forzar reset"}
-      </button>
-      <button
-        type="button"
+        {loading === "reset" ? "Enviando…" : "Forzar reset"}
+      </FlitButton>
+      <DangerButton
         onClick={blockUser}
         disabled={loading !== null}
-        className="rounded border border-red-300 px-2 py-1 text-xs text-red-700 hover:bg-red-50 disabled:opacity-50"
+        className="min-h-9 px-4 text-xs"
       >
-        {loading === "block" ? "…" : "Bloquear"}
-      </button>
-      {message && <span className="text-xs text-zinc-600">{message}</span>}
+        {loading === "block" ? "Bloqueando…" : "Bloquear"}
+      </DangerButton>
+      {message && (
+        <span className="text-xs text-flit-text-secondary" aria-live="polite">
+          {message}
+        </span>
+      )}
     </div>
   );
 }

@@ -2,15 +2,19 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { FlitButton } from "@/components/flit/Button";
 
-export function LogoutButton({ className = "" }: { className?: string }) {
+export function LogoutButton() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   async function logout() {
     setLoading(true);
     try {
-      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
       router.push("/login");
       router.refresh();
     } finally {
@@ -19,16 +23,14 @@ export function LogoutButton({ className = "" }: { className?: string }) {
   }
 
   return (
-    <button
-      type="button"
+    <FlitButton
+      variant="ghost"
       onClick={logout}
       disabled={loading}
-      className={
-        className ||
-        "text-sm text-zinc-600 underline hover:text-zinc-900 disabled:opacity-50"
-      }
+      className="min-h-9 px-4 text-sm"
+      aria-label="Cerrar sesión"
     >
-      {loading ? "Saliendo…" : "Cerrar sesión"}
-    </button>
+      {loading ? "Saliendo…" : "Salir"}
+    </FlitButton>
   );
 }

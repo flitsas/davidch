@@ -1,6 +1,8 @@
-import Link from "next/link";
-import { redirect } from "next/navigation";
 import { LogoutButton } from "@/components/auth/LogoutButton";
+import { AppShell } from "@/components/flit/AppShell";
+import { FlitCard } from "@/components/flit/Card";
+import { FlitLink } from "@/components/flit/Link";
+import { buildAdminNav } from "@/lib/flit/nav";
 import { getSessionOrRedirect, hasPermission } from "@/lib/auth/session";
 
 export default async function AdminLayout({
@@ -15,41 +17,30 @@ export default async function AdminLayout({
 
   if (!canUsers && !canRoles) {
     return (
-      <main className="mx-auto max-w-3xl p-8">
-        <p>No tienes permisos para acceder a la administración.</p>
-        <Link href="/" className="underline">
-          Volver al inicio
-        </Link>
-      </main>
+      <AppShell
+        email={session.email}
+        nav={buildAdminNav(session)}
+        headerActions={<LogoutButton />}
+      >
+        <FlitCard>
+          <p className="text-flit-text-secondary">
+            No tienes permisos para acceder a la administración.
+          </p>
+          <FlitLink href="/" className="mt-4 inline-block">
+            Volver al inicio
+          </FlitLink>
+        </FlitCard>
+      </AppShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50">
-      <header className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center gap-6 px-6 py-4">
-          <Link href="/" className="font-semibold">
-            FLIT
-          </Link>
-          <nav className="flex gap-4 text-sm">
-            {canUsers && (
-              <Link href="/admin/users" className="hover:underline">
-                Usuarios
-              </Link>
-            )}
-            {canRoles && (
-              <Link href="/admin/roles" className="hover:underline">
-                Roles
-              </Link>
-            )}
-          </nav>
-          <span className="ml-auto flex items-center gap-4 text-sm text-zinc-600">
-            {session.email}
-            <LogoutButton />
-          </span>
-        </div>
-      </header>
-      <main className="mx-auto max-w-5xl p-6">{children}</main>
-    </div>
+    <AppShell
+      email={session.email}
+      nav={buildAdminNav(session)}
+      headerActions={<LogoutButton />}
+    >
+      {children}
+    </AppShell>
   );
 }

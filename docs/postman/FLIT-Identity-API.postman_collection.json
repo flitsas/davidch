@@ -1,0 +1,1496 @@
+{
+  "info": {
+    "name": "FLIT Identity & RBAC API",
+    "description": "# FLIT Identity & RBAC API\n\nComplete API reference for the FLIT modular monolith identity layer (.NET 9).\n\n## Architecture\n\n| Component | Dev URL | Notes |\n|-----------|---------|-------|\n| **Gateway (YARP)** | `http://localhost:5023` | Unified entry — proxies `/api/*` to backend |\n| **Identity API** | `http://localhost:5080` | Direct backend access (bypass gateway) |\n| **Frontend** | `http://localhost:3000` | Next.js App Router |\n| **Mailhog** | `http://localhost:8025` | Dev email UI (invites, resets) |\n| **PostgreSQL** | `localhost:5432` | Database `flit_identity` |\n\n## Authentication Model\n\nFLIT uses **HttpOnly cookie-based JWT authentication** — not Bearer tokens in headers.\n\n| Cookie | Purpose | Lifetime |\n|--------|---------|----------|\n| `flit_access` | RS256 JWT access token | 15 minutes |\n| `flit_refresh` | Opaque refresh token (SHA-256 hashed in DB) | 7 days |\n\n**Cookie flags (Development):** `HttpOnly`, `SameSite=Strict`, `Secure=false` (localhost)\n\n### JWT Claims\n\n| Claim | Description |\n|-------|-------------|\n| `sub` | User ID (UUID) |\n| `email` | Normalized email |\n| `tenant_id` | Tenant UUID (null for SuperAdmin) |\n| `roles` | Role names (multi-valued) |\n| `permissions` | `key\\|scope` pairs (e.g. `users:read\\|Tenant`) |\n| `is_super_admin` | `true` for platform SuperAdmin |\n| `token_version` | Integer — incremented on session revocation |\n\n### Session Eviction\n\nWhen privileges change (role assignment, permission update, block, password reset), `token_version` increments. Existing JWTs return `403 SESSION_REVOKED` with header `X-Session-Revoked: true`.\n\n## Authorization (RBAC + ABAC Scopes)\n\nPermissions follow `module:action` format. Each grant has a **scope**:\n\n| Scope | Meaning |\n|-------|---------|\n| `Global` | All resources across all tenants (SuperAdmin) |\n| `Tenant` | Resources within the caller's tenant |\n| `Own` | Only resources owned by the caller |\n\nSuperAdmin bypasses permission checks entirely.\n\n## Rate Limiting\n\n| Endpoint | Limit |\n|----------|-------|\n| `POST /api/auth/login` | Per IP + email |\n| `POST /api/auth/forgot-password` | Per IP + email |\n\nReturns `429` with `{ \"code\": \"RATE_LIMITED\" }`.\n\n## Bootstrap Credentials (Development)\n\n| Field | Value |\n|-------|-------|\n| Email | `super@flit.local` |\n| Password | `FlitDev2026!` |\n\n## Recommended Flow\n\n1. **Login** → cookies set automatically in Postman\n2. **Get Current User** → verify session and permissions\n3. Use protected endpoints (Users, Roles, Permissions)\n4. **Refresh** when access token expires (or rely on frontend middleware)\n5. **Logout** → revokes refresh token, clears cookies\n\n## Error Codes\n\n| Code | HTTP | Meaning |\n|------|------|---------|\n| `INVALID_CREDENTIALS` | 401 | Wrong email/password or inactive user |\n| `TOKEN_EXPIRED` | 401 | Missing/invalid/expired access or refresh token |\n| `SESSION_REVOKED` | 403 | `token_version` mismatch — re-login required |\n| `FORBIDDEN` | 403 | Authenticated but insufficient permission |\n| `VALIDATION_ERROR` | 400 | Invalid request body |\n| `NOT_FOUND` | 404 | Resource not found |\n| `RATE_LIMITED` | 429 | Too many login/forgot-password attempts |\n| `ROLE_HAS_USERS` | 409 | Cannot delete role with assigned users |\n| `INVITATION_TOKEN_INVALID` | 400 | Expired/used/invalid activation token |\n| `RESET_TOKEN_INVALID` | 400 | Expired/used/invalid password reset token |\n| `EMAIL_EXISTS` | 409 | Email already registered |\n",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5080",
+      "description": "Identity API direct (use http://localhost:5023 for gateway)"
+    },
+    {
+      "key": "bootstrapEmail",
+      "value": "super@flit.local"
+    },
+    {
+      "key": "bootstrapPassword",
+      "value": "FlitDev2026!"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "description": "Target user UUID"
+    },
+    {
+      "key": "roleId",
+      "value": "",
+      "description": "Target role UUID"
+    },
+    {
+      "key": "replacementRoleId",
+      "value": "",
+      "description": "Replacement role for migration"
+    },
+    {
+      "key": "permissionId",
+      "value": "",
+      "description": "Permission UUID from List Permissions"
+    },
+    {
+      "key": "tenantId",
+      "value": "",
+      "description": "Tenant UUID (SuperAdmin invites)"
+    },
+    {
+      "key": "activationToken",
+      "value": "",
+      "description": "From invitation email /activate?token="
+    },
+    {
+      "key": "resetToken",
+      "value": "",
+      "description": "From reset email /reset-password?token="
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Collection pre-request: ensure cookies are sent",
+          "// Postman sends cookies automatically for matching domains"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-save IDs from responses for chained requests",
+          "if (pm.response.code === 200 || pm.response.code === 201) {",
+          "  try {",
+          "    const json = pm.response.json();",
+          "    if (json.id) pm.collectionVariables.set('lastId', json.id);",
+          "    if (json.user_id) pm.collectionVariables.set('userId', json.user_id);",
+          "    if (Array.isArray(json) && json[0]?.id) pm.collectionVariables.set('roleId', json[0].id);",
+          "  } catch (e) {}",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "description": "Infrastructure endpoints",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/health",
+            "description": "## Overview\nLiveness probe for the Identity API. No authentication required.\n\n## Use Cases\n- Docker/Kubernetes health checks\n- CI pipeline smoke tests\n- Verify API is running before login\n\n## Response\n`200 OK` with `{ \"status\": \"ok\" }`\n",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/health"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"ok\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "description": "Cookie-based JWT auth. Run **Login** first — Postman stores `flit_access` and `flit_refresh` cookies automatically.",
+      "item": [
+        {
+          "name": "Session",
+          "description": "Sign-in, token refresh, logout, and current user profile.",
+          "item": [
+            {
+              "name": "Login",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/auth/login",
+                "description": "## Overview\nAuthenticates a user with email and password. On success, sets two HttpOnly cookies.\n\n## Use Cases\n- User sign-in from web or mobile client\n- Obtain session for subsequent API calls\n- Admin console access\n\n## Request Body\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| `email` | string | Yes | User email (case-insensitive) |\n| `password` | string | Yes | Plain-text password (Argon2id verified server-side) |\n\n## Success Response — `200 OK`\n```json\n{\n  \"id\": \"uuid\",\n  \"email\": \"super@flit.local\",\n  \"tenant_id\": null,\n  \"roles\": [\"SuperAdmin\"]\n}\n```\n\n**Set-Cookie headers:**\n- `flit_access` — JWT (15 min)\n- `flit_refresh` — opaque token (7 days)\n\n## Error Responses\n| Status | Code | When |\n|--------|------|------|\n| 401 | `INVALID_CREDENTIALS` | Wrong password, inactive user, or email not found |\n| 429 | `RATE_LIMITED` | Too many attempts (per IP + email) |\n\n## Postman Notes\nPostman automatically stores cookies after login. Run **Get Current User** to verify.\n\n## Security\n- Passwords hashed with Argon2id\n- Failed logins audited\n- Rate limited per IP and email\n",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{bootstrapEmail}}\",\n  \"password\": \"{{bootstrapPassword}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "response": [
+                {
+                  "name": "200 SuperAdmin",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/api/auth/login"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n  \"email\": \"super@flit.local\",\n  \"tenant_id\": null,\n  \"roles\": [\n    \"SuperAdmin\"\n  ]\n}"
+                },
+                {
+                  "name": "401 Invalid Credentials",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/api/auth/login"
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"code\": \"INVALID_CREDENTIALS\"\n}"
+                },
+                {
+                  "name": "429 Rate Limited",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/api/auth/login"
+                  },
+                  "status": "Too Many Requests",
+                  "code": 429,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"code\": \"RATE_LIMITED\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Refresh Session",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/auth/refresh",
+                "description": "## Overview\nRotates the refresh token and issues a new access JWT. Requires the `flit_refresh` cookie.\n\n## Use Cases\n- Silent token renewal (frontend middleware does this automatically)\n- Extend session without re-entering credentials\n- Recover from expired access token\n\n## Request\nNo body. Sends `flit_refresh` cookie automatically.\n\n## Token Rotation\nThe old refresh token is **revoked** and a new one issued (one-time use). Prevents refresh token replay attacks.\n\n## Success — `200 OK`\nSame shape as login response. New cookies set.\n\n## Errors\n| Status | Code | When |\n|--------|------|------|\n| 401 | `TOKEN_EXPIRED` | Missing, revoked, or expired refresh token |\n| 403 | `SESSION_REVOKED` | User blocked or token_version changed |\n"
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/api/auth/refresh"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n  \"email\": \"super@flit.local\",\n  \"tenant_id\": null,\n  \"roles\": [\n    \"SuperAdmin\"\n  ]\n}"
+                },
+                {
+                  "name": "401 Missing Refresh Token",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/api/auth/refresh"
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"code\": \"TOKEN_EXPIRED\"\n}"
+                },
+                {
+                  "name": "403 Session Revoked",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/api/auth/refresh"
+                  },
+                  "status": "Forbidden",
+                  "code": 403,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"code\": \"SESSION_REVOKED\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Logout",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/auth/logout",
+                "description": "## Overview\nRevokes the current refresh token and clears both auth cookies.\n\n## Use Cases\n- User-initiated sign out\n- Security: invalidate session on shared device\n- E2E test teardown\n\n## Request\nNo body. Uses cookies if present.\n\n## Success — `204 No Content`\nCookies deleted via `Set-Cookie` with expired date.\n\n## Notes\nIdempotent — succeeds even when no refresh cookie is present.\n"
+              },
+              "response": [
+                {
+                  "name": "204 No Content",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/api/auth/logout"
+                  },
+                  "status": "No Content",
+                  "code": 204,
+                  "_postman_previewlanguage": "plain",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": ""
+                }
+              ]
+            },
+            {
+              "name": "Get Current User",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/auth/me",
+                "description": "## Overview\nReturns the authenticated user's profile, roles, and resolved permissions from the JWT.\n\n## Use Cases\n- Frontend session bootstrap (`/api/auth/me` on page load)\n- Permission guard checks in UI\n- Verify login succeeded in Postman\n\n## Authentication\nRequires valid `flit_access` cookie (or expired → call Refresh first).\n\n## Success — `200 OK`\n```json\n{\n  \"id\": \"uuid\",\n  \"email\": \"user@example.com\",\n  \"tenantId\": \"uuid-or-null\",\n  \"roles\": [\"Admin\"],\n  \"permissions\": [\n    { \"key\": \"users:read\", \"scope\": \"Tenant\" }\n  ],\n  \"isSuperAdmin\": false\n}\n```\n\n## Errors\n| Status | Code | Header | When |\n|--------|------|--------|------|\n| 401 | `TOKEN_EXPIRED` | — | No/invalid/expired JWT |\n| 403 | `SESSION_REVOKED` | `X-Session-Revoked: true` | token_version mismatch |\n"
+              },
+              "response": [
+                {
+                  "name": "200 SuperAdmin",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/api/auth/me"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n  \"email\": \"super@flit.local\",\n  \"tenantId\": null,\n  \"roles\": [\n    \"SuperAdmin\"\n  ],\n  \"permissions\": [\n    {\n      \"key\": \"users:read\",\n      \"scope\": \"Global\"\n    }\n  ],\n  \"isSuperAdmin\": true\n}"
+                },
+                {
+                  "name": "401 Token Expired",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/api/auth/me"
+                  },
+                  "status": "Unauthorized",
+                  "code": 401,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"code\": \"TOKEN_EXPIRED\"\n}"
+                },
+                {
+                  "name": "403 Session Revoked",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/api/auth/me"
+                  },
+                  "status": "Forbidden",
+                  "code": 403,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "X-Session-Revoked",
+                      "value": "true"
+                    }
+                  ],
+                  "body": "{\n  \"code\": \"SESSION_REVOKED\",\n  \"message\": \"Session revoked.\"\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Account Activation",
+          "description": "Complete invited-user onboarding with an activation token.",
+          "item": [
+            {
+              "name": "Activate Account",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/auth/activate",
+                "description": "## Overview\nCompletes user onboarding by setting a password from an invitation link.\n\n## Use Cases\n- New employee accepts invite email\n- First-time password setup for invited users\n\n## Flow\n1. Admin calls **Invite User** → email sent with `/activate?token=...`\n2. User opens link, submits password\n3. User status changes `Pending` → `Active`\n\n## Request Body\n| Field | Type | Required |\n|-------|------|----------|\n| `token` | string | Yes — from invitation email URL |\n| `password` | string | Yes — new password (Argon2id hashed) |\n\n## Success — `200 OK`\n`{ \"email\": \"newuser@tenant.com\" }`\n\n## Errors\n| Status | Code | When |\n|--------|------|------|\n| 400 | `VALIDATION_ERROR` | Missing token/password |\n| 400 | `INVITATION_TOKEN_INVALID` | Expired (72h), used, or invalid token |\n\n## Token Source\nCheck Mailhog at `http://localhost:8025` for invitation emails in development.\n",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"token\": \"{{activationToken}}\",\n  \"password\": \"SecurePass!123\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/api/auth/activate"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"email\": \"newuser@tenant.com\"\n}"
+                },
+                {
+                  "name": "400 Validation Error",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/api/auth/activate"
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"code\": \"VALIDATION_ERROR\",\n  \"message\": \"Token and password are required.\"\n}"
+                },
+                {
+                  "name": "400 Invalid Token",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/api/auth/activate"
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"code\": \"INVITATION_TOKEN_INVALID\"\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Password Recovery",
+          "description": "Self-service forgot-password and reset-password flows.",
+          "item": [
+            {
+              "name": "Forgot Password",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/auth/forgot-password",
+                "description": "## Overview\nInitiates self-service password reset. Always returns the same message (no email enumeration).\n\n## Use Cases\n- User forgot password on login page\n- Self-service account recovery\n\n## Request Body\n| Field | Type | Required |\n|-------|------|----------|\n| `email` | string | Yes |\n\n## Success — `200 OK` (always)\n```json\n{ \"message\": \"If an account exists, a reset link has been sent.\" }\n```\n\n## Side Effects (if account exists)\n- Creates `PasswordResetToken` (1 hour expiry, type `SelfService`)\n- Sends email with `/reset-password?token=...` link\n\n## Rate Limited\nReturns `429 RATE_LIMITED` on abuse (per IP + email).\n\n## Security\nResponse is identical whether email exists — prevents account enumeration.\n",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"user@tenant.com\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/api/auth/forgot-password"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"message\": \"If an account exists, a reset link has been sent.\"\n}"
+                },
+                {
+                  "name": "429 Rate Limited",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/api/auth/forgot-password"
+                  },
+                  "status": "Too Many Requests",
+                  "code": 429,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"code\": \"RATE_LIMITED\"\n}"
+                }
+              ]
+            },
+            {
+              "name": "Reset Password",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/auth/reset-password",
+                "description": "## Overview\nSets a new password using a reset token from email (self-service or admin-forced).\n\n## Use Cases\n- Complete forgot-password flow\n- Admin forced reset (user receives same email format)\n\n## Request Body\n| Field | Type | Required |\n|-------|------|----------|\n| `token` | string | Yes — from reset email URL |\n| `new_password` | string | Yes |\n\n## Success — `200 OK`\n`{ \"email\": \"user@tenant.com\" }`\n\n## Side Effects\n- All sessions revoked (`token_version` incremented)\n- Reset token marked used\n\n## Errors\n| Status | Code | When |\n|--------|------|------|\n| 400 | `VALIDATION_ERROR` | Missing fields |\n| 400 | `RESET_TOKEN_INVALID` | Expired or already used |\n",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"token\": \"{{resetToken}}\",\n  \"new_password\": \"NewSecurePass!456\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/api/auth/reset-password"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"email\": \"user@tenant.com\"\n}"
+                },
+                {
+                  "name": "400 Validation Error",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/api/auth/reset-password"
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"code\": \"VALIDATION_ERROR\",\n  \"message\": \"Token and new password are required.\"\n}"
+                },
+                {
+                  "name": "400 Invalid Token",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{baseUrl}}/api/auth/reset-password"
+                  },
+                  "status": "Bad Request",
+                  "code": 400,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"code\": \"RESET_TOKEN_INVALID\"\n}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "RBAC — Permissions",
+      "description": "Permission catalog for role configuration.",
+      "item": [
+        {
+          "name": "List Permissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/permissions",
+            "description": "## Overview\nReturns the full RBAC permission catalog for building role editors.\n\n## Required Permission\n`roles:read` with scope **Tenant** (or SuperAdmin bypass).\n\n## Use Cases\n- Admin console role permission picker\n- Audit available capabilities\n- API integration for custom admin tools\n\n## Success — `200 OK`\nArray of permission objects:\n```json\n[\n  {\n    \"id\": \"uuid\",\n    \"key\": \"users:read\",\n    \"type\": \"Crud\",\n    \"module\": \"users\",\n    \"description\": \"users read\"\n  }\n]\n```\n\n## Seeded Permissions\nModules: `users`, `roles`, `tramites` — each with `create`, `read`, `update`, `delete`.\nPlus UI permission: `generar_consolidado`.\n"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/permissions"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": \"a1\",\n    \"key\": \"users:read\",\n    \"type\": \"Crud\",\n    \"module\": \"users\",\n    \"description\": \"users read\"\n  },\n  {\n    \"id\": \"a2\",\n    \"key\": \"roles:create\",\n    \"type\": \"Crud\",\n    \"module\": \"roles\",\n    \"description\": \"roles create\"\n  }\n]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "RBAC — Roles",
+      "description": "Tenant-scoped role CRUD, permission assignment, and migration.",
+      "item": [
+        {
+          "name": "List Roles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/roles",
+            "description": "## Overview\nLists all roles visible in the current tenant context (EF global query filter).\n\n## Required Permission\n`roles:read` (Tenant scope).\n\n## Use Cases\n- Admin role management table\n- Dropdown for user role assignment\n\n## Success — `200 OK`\n```json\n[\n  {\n    \"id\": \"uuid\",\n    \"name\": \"TenantAdmin\",\n    \"isSystem\": false,\n    \"tenantId\": \"uuid\",\n    \"createdAt\": \"2026-06-10T00:00:00Z\"\n  }\n]\n```\n\n## Notes\n- SuperAdmin role has `tenantId: null`, `isSystem: true`\n- Tenant-scoped users only see their tenant's roles\n"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/roles"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": \"r1\",\n    \"name\": \"TenantAdmin\",\n    \"isSystem\": false,\n    \"tenantId\": \"t1\",\n    \"createdAt\": \"2026-06-10T00:00:00+00:00\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Create Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/roles",
+            "description": "## Overview\nCreates a new tenant-scoped custom role.\n\n## Required Permission\n`roles:create` (Tenant scope).\n\n## Request Body\n| Field | Type | Required |\n|-------|------|----------|\n| `name` | string | Yes — unique within tenant |\n\n## Success — `201 Created`\nRole summary + `Location: /api/roles/{id}` header.\n\n## Errors\n| Status | Code | When |\n|--------|------|------|\n| 400 | `VALIDATION_ERROR` | Empty name or missing tenant context |\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"ClaimsReviewer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/roles"
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"r-new\",\n  \"name\": \"ClaimsReviewer\",\n  \"isSystem\": false,\n  \"tenantId\": \"t1\",\n  \"createdAt\": \"2026-06-10T00:00:00+00:00\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Role",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/roles/{{roleId}}",
+            "description": "## Overview\nReturns role details including assigned permissions and scopes.\n\n## Required Permission\n`roles:read` (Tenant scope).\n\n## Path Parameters\n| Param | Description |\n|-------|-------------|\n| `id` | Role UUID |\n\n## Success — `200 OK`\n```json\n{\n  \"id\": \"uuid\",\n  \"name\": \"ClaimsReviewer\",\n  \"isSystem\": false,\n  \"tenantId\": \"uuid\",\n  \"createdAt\": \"...\",\n  \"permissions\": [\n    { \"permissionId\": \"uuid\", \"key\": \"tramites:read\", \"scope\": \"Tenant\" }\n  ]\n}\n```\n"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/roles/{{roleId}}"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"r1\",\n  \"name\": \"ClaimsReviewer\",\n  \"isSystem\": false,\n  \"tenantId\": \"t1\",\n  \"createdAt\": \"2026-06-10T00:00:00+00:00\",\n  \"permissions\": [\n    {\n      \"permissionId\": \"p1\",\n      \"key\": \"tramites:read\",\n      \"scope\": \"Tenant\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/roles/{{roleId}}",
+            "description": "## Overview\nRenames a custom (non-system) role.\n\n## Required Permission\n`roles:update` (Tenant scope).\n\n## Request Body\n| Field | Type | Required |\n|-------|------|----------|\n| `name` | string | Yes |\n\n## Success — `200 OK`\nUpdated role summary.\n\n## Errors\n| Status | Code | When |\n|--------|------|------|\n| 403 | `FORBIDDEN` | Attempting to modify system role (e.g. SuperAdmin) |\n| 404 | `NOT_FOUND` | Role doesn't exist |\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Senior Claims Reviewer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/roles/{{roleId}}"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"r1\",\n  \"name\": \"Senior Claims Reviewer\",\n  \"isSystem\": false,\n  \"tenantId\": \"t1\",\n  \"createdAt\": \"2026-06-10T00:00:00+00:00\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Set Role Permissions",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/roles/{{roleId}}/permissions",
+            "description": "## Overview\nReplaces all permissions on a role. **Revokes sessions** for all users with this role.\n\n## Required Permission\n`roles:update` (Tenant scope).\n\n## Request Body\n```json\n{\n  \"permissions\": [\n    { \"permission_id\": \"uuid\", \"scope\": \"Tenant\" }\n  ]\n}\n```\n\n## Scope Values\n`Global`, `Tenant`, `Own`\n\n## Success — `204 No Content`\n\n## Side Effects\n- All users with this role get `token_version` incremented\n- Audit log: `role_permissions_changed`\n\n## Errors\n| Status | Code | When |\n|--------|------|------|\n| 400 | `VALIDATION_ERROR` | Invalid permission IDs |\n| 403 | `FORBIDDEN` | System role modification |\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"permissions\": [\n    {\n      \"permission_id\": \"{{permissionId}}\",\n      \"scope\": \"Tenant\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/roles/{{roleId}}/permissions"
+              },
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "plain",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": ""
+            }
+          ]
+        },
+        {
+          "name": "Delete Role",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/roles/{{roleId}}",
+            "description": "## Overview\nPermanently deletes an empty custom role.\n\n## Required Permission\n`roles:delete` (Tenant scope).\n\n## Success — `204 No Content`\n\n## Errors\n| Status | Code | When |\n|--------|------|------|\n| 403 | `FORBIDDEN` | System role |\n| 404 | `NOT_FOUND` | Role not found |\n| 409 | `ROLE_HAS_USERS` | Role still assigned — use **Migrate Role** first |\n\n## Response (409)\n```json\n{ \"code\": \"ROLE_HAS_USERS\", \"affected_users\": 5 }\n```\n"
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/roles/{{roleId}}"
+              },
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "plain",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": ""
+            },
+            {
+              "name": "409 Role Has Users",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/roles/{{roleId}}"
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"code\": \"ROLE_HAS_USERS\",\n  \"affected_users\": 5\n}"
+            }
+          ]
+        },
+        {
+          "name": "Migrate Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/roles/{{roleId}}/migrate",
+            "description": "## Overview\nMoves all users from a deprecated role to a replacement role, then deletes the source role.\n\n## Required Permission\n`roles:delete` (Tenant scope).\n\n## Use Cases\n- Deprecate old role names without orphaning users\n- RBAC restructuring\n\n## Request Body\n```json\n{ \"replacement_role_id\": \"uuid\" }\n```\n\n## Validation\n- Source ≠ replacement\n- Both roles same tenant\n- Cannot migrate to/from system roles\n\n## Success — `204 No Content`\n\n## Side Effects\n- Users reassigned (deduplicated if already have replacement role)\n- Source role and its permissions deleted\n- All affected users' sessions revoked\n- Audit log: `role_migrated`\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"replacement_role_id\": \"{{replacementRoleId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/roles/{{roleId}}/migrate"
+              },
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "plain",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "description": "User lifecycle: invite, list, assign roles, force reset, block.",
+      "item": [
+        {
+          "name": "Invite User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/invite",
+            "description": "## Overview\nCreates a pending user, assigns roles, and sends activation email.\n\n## Required Permission\n`users:create` (Tenant scope).\n\n## Request Body\n| Field | Type | Required | Notes |\n|-------|------|----------|-------|\n| `email` | string | Yes | Normalized to lowercase |\n| `role_ids` | uuid[] | No | Must belong to target tenant |\n| `tenant_id` | uuid | SuperAdmin only | Required when inviter is SuperAdmin |\n\n## Tenant Inheritance\n- **Tenant admin:** `tenant_id` inherited from JWT (ignored in body)\n- **SuperAdmin:** must specify `tenant_id`\n\n## Success — `201 Created`\n```json\n{\n  \"user_id\": \"uuid\",\n  \"email\": \"new@tenant.com\",\n  \"status\": \"Pending\"\n}\n```\n\n## Side Effects\n- Invitation token created (72h expiry)\n- Email sent via SMTP (Mailhog in dev)\n\n## Errors\n| Status | Code | When |\n|--------|------|------|\n| 400 | `VALIDATION_ERROR` | Invalid roles or missing tenant_id |\n| 409 | `EMAIL_EXISTS` | Email already registered |\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@tenant.com\",\n  \"role_ids\": [\n    \"{{roleId}}\"\n  ],\n  \"tenant_id\": \"{{tenantId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/users/invite"
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"user_id\": \"u-new\",\n  \"email\": \"newuser@tenant.com\",\n  \"status\": \"Pending\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users",
+            "description": "## Overview\nLists users in the current tenant (filtered by EF global query filter).\n\n## Required Permission\n`users:read` (Tenant scope).\n\n## Success — `200 OK`\n```json\n[\n  {\n    \"id\": \"uuid\",\n    \"email\": \"user@tenant.com\",\n    \"status\": \"Active\",\n    \"tenantId\": \"uuid\",\n    \"createdAt\": \"...\",\n    \"activatedAt\": \"...\"\n  }\n]\n```\n\n## Status Values\n`Pending`, `Active`, `Blocked`\n\n## SuperAdmin\nSees all users (no tenant filter when `tenant_id` claim is null).\n"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/users"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": \"u1\",\n    \"email\": \"user@tenant.com\",\n    \"status\": \"Active\",\n    \"tenantId\": \"t1\",\n    \"createdAt\": \"2026-06-01T00:00:00+00:00\",\n    \"activatedAt\": \"2026-06-02T00:00:00+00:00\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Set User Roles",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{userId}}/roles",
+            "description": "## Overview\nReplaces all roles assigned to a user. Supports conflict detection with confirmation.\n\n## Required Permission\n`users:update` (Tenant scope).\n\n## Request Body\n```json\n{\n  \"role_ids\": [\"uuid1\", \"uuid2\"],\n  \"confirm\": false\n}\n```\n\n## Two-Phase Flow\n1. **First call** (`confirm: false`) — if role conflicts detected, returns `200` with warnings:\n```json\n{\n  \"pending\": true,\n  \"warnings\": [\n    {\n      \"type\": \"SCOPE_SUBSUMPTION\",\n      \"message\": \"...\",\n      \"role_id\": \"uuid\",\n      \"permission_key\": \"users:read\"\n    }\n  ]\n}\n```\n2. **Confirm** (`confirm: true`) — applies changes despite warnings.\n\n## Success — `204 No Content`\n\n## Side Effects\n- User sessions revoked immediately\n- Audit log: `user_roles_changed`\n\n## Errors\n| Status | Code | When |\n|--------|------|------|\n| 400 | `VALIDATION_ERROR` | Empty role_ids or invalid IDs |\n| 403 | `FORBIDDEN` | Cross-tenant assignment |\n| 404 | `NOT_FOUND` | User not found |\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role_ids\": [\n    \"{{roleId}}\"\n  ],\n  \"confirm\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 Pending Confirmation",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/users/{{userId}}/roles"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"pending\": true,\n  \"warnings\": [\n    {\n      \"type\": \"SCOPE_SUBSUMPTION\",\n      \"message\": \"Role Admin already grants users:read at Tenant scope.\",\n      \"role_id\": \"r1\",\n      \"permission_key\": \"users:read\"\n    }\n  ]\n}"
+            },
+            {
+              "name": "204 Applied",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/users/{{userId}}/roles"
+              },
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "plain",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": ""
+            }
+          ]
+        },
+        {
+          "name": "Force Password Reset",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{userId}}/force-reset",
+            "description": "## Overview\nAdmin-initiated password reset. Revokes all sessions and emails a reset link.\n\n## Required Permission\n`users:update` (Tenant scope).\n\n## Use Cases\n- Suspected account compromise\n- Employee offboarding preparation\n- Compliance-mandated credential rotation\n\n## Success — `200 OK`\n```json\n{ \"user_id\": \"uuid\", \"email\": \"user@tenant.com\" }\n```\n\n## Side Effects\n- All sessions revoked immediately\n- `PasswordResetToken` created (24h expiry, type `Forced`)\n- Reset email sent\n- Audit log: `user_force_reset`\n\n## Errors\n| Status | Code | When |\n|--------|------|------|\n| 400 | `VALIDATION_ERROR` | User not Active |\n| 404 | `NOT_FOUND` | User not found |\n"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/users/{{userId}}/force-reset"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"user_id\": \"u1\",\n  \"email\": \"user@tenant.com\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Block User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/users/{{userId}}/block",
+            "description": "## Overview\nBlocks a user account and revokes all active sessions.\n\n## Required Permission\n`users:update` (Tenant scope).\n\n## Use Cases\n- Terminate access for departing employee\n- Security incident response\n- Suspend abusive account\n\n## Success — `204 No Content`\nIdempotent if user already blocked.\n\n## Side Effects\n- Status → `Blocked`\n- All sessions revoked\n- Audit log: `user_blocked`\n\n## Errors\n| Status | Code | When |\n|--------|------|------|\n| 403 | `FORBIDDEN` | Cross-tenant block attempt |\n| 404 | `NOT_FOUND` | User not found |\n"
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/users/{{userId}}/block"
+              },
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "plain",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Tenants",
+      "description": "Platform tenant catalog (SuperAdmin only).",
+      "item": [
+        {
+          "name": "List Tenants",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/tenants",
+            "description": "## Overview\nLists active tenants. SuperAdmin-only endpoint.\n\n## Required Access\nAuthenticated SuperAdmin (`is_super_admin: true` in JWT).\n\n## Use Cases\n- SuperAdmin tenant picker in admin console\n- Resolve `tenant_id` before inviting users to a tenant\n\n## Success — `200 OK`\n```json\n[\n  { \"id\": \"uuid\", \"name\": \"Acme Corp\", \"slug\": \"acme\" }\n]\n```\n\n## Errors\n| Status | Code | When |\n|--------|------|------|\n| 401 | `TOKEN_EXPIRED` | Not authenticated |\n| 403 | `FORBIDDEN` | Authenticated but not SuperAdmin |\n"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{baseUrl}}/api/tenants"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": \"t1\",\n    \"name\": \"Acme Corp\",\n    \"slug\": \"acme\"\n  },\n  {\n    \"id\": \"t2\",\n    \"name\": \"Globex\",\n    \"slug\": \"globex\"\n  }\n]"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

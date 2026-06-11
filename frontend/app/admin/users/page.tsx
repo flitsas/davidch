@@ -5,6 +5,9 @@ import type { RoleSummary, TenantSummary, UserSummary } from "@/lib/admin/types"
 import { InviteUserForm } from "@/components/admin/InviteUserForm";
 import { UserRolesEditor } from "@/components/admin/UserRolesEditor";
 import { UserActions } from "@/components/admin/UserActions";
+import { PageHeaderCard } from "@/components/flit/Card";
+import { StatusChip, statusVariantFromUserStatus } from "@/components/flit/Chip";
+import { FlitCard } from "@/components/flit/Card";
 
 export default async function AdminUsersPage() {
   const session = await getSessionOrRedirect();
@@ -23,38 +26,47 @@ export default async function AdminUsersPage() {
     tenantsRes?.ok ? await tenantsRes.json() : [];
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Usuarios</h1>
+    <>
+      <PageHeaderCard title="Usuarios" subtitle="Gestión de colaboradores y accesos" />
       {hasPermission(session, "users:create") && (
         <InviteUserForm roles={roles} tenants={tenants} isSuperAdmin={session.isSuperAdmin} />
       )}
-      <section className="space-y-2">
-        <h2 className="font-medium">Listado</h2>
+      <FlitCard className="overflow-hidden p-0">
+        <div className="border-b border-flit-border-soft bg-flit-bg-table-header px-6 py-4">
+          <h2 className="text-sm font-semibold text-flit-text-brand">Listado</h2>
+        </div>
         {users.length === 0 ? (
-          <p className="text-sm text-zinc-600">No hay usuarios en este tenant.</p>
+          <p className="px-6 py-8 text-sm text-flit-text-secondary">
+            No hay usuarios en este tenant.
+          </p>
         ) : (
-          users.map((user) => (
-            <div key={user.id} className="rounded border border-zinc-200 bg-white p-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">{user.email}</span>
-                <span className="rounded bg-zinc-100 px-2 py-0.5 text-xs">{user.status}</span>
-              </div>
-              {hasPermission(session, "users:update") && (
-                <>
-                  <UserActions userId={user.id} userEmail={user.email} />
-                  <UserRolesEditor
-                    key={`${user.id}-${(user.role_ids ?? []).join(",")}`}
-                    userId={user.id}
-                    userEmail={user.email}
-                    currentRoleIds={user.role_ids ?? []}
-                    roles={roles}
+          <ul className="divide-y divide-flit-border-soft">
+            {users.map((user) => (
+              <li key={user.id} className="px-6 py-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className="font-semibold text-flit-text-primary">{user.email}</span>
+                  <StatusChip
+                    label={user.status}
+                    variant={statusVariantFromUserStatus(user.status)}
                   />
-                </>
-              )}
-            </div>
-          ))
+                </div>
+                {hasPermission(session, "users:update") && (
+                  <div className="mt-4 space-y-3">
+                    <UserActions userId={user.id} userEmail={user.email} />
+                    <UserRolesEditor
+                      key={`${user.id}-${(user.role_ids ?? []).join(",")}`}
+                      userId={user.id}
+                      userEmail={user.email}
+                      currentRoleIds={user.role_ids ?? []}
+                      roles={roles}
+                    />
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
         )}
-      </section>
-    </div>
+      </FlitCard>
+    </>
   );
 }

@@ -44,10 +44,12 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
     await db.Database.MigrateAsync();
-    await IdentityDbSeeder.SeedAsync(
-        db,
-        app.Configuration,
-        scope.ServiceProvider.GetRequiredService<IPasswordHasher>());
+    var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+    await IdentityDbSeeder.SeedAsync(db, app.Configuration, hasher);
+    if (app.Environment.IsDevelopment())
+    {
+        await DevTenantSeeder.SeedAsync(db, hasher);
+    }
 }
 
 app.UseMiddleware<RateLimitingMiddleware>();

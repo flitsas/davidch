@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using Flit.Identity.Infrastructure.Persistence;
 using Flit.Identity.Infrastructure.Persistence.Entities;
+using Flit.Identity.Infrastructure.Persistence.Seed;
 using Flit.Identity.Infrastructure.Security;
 using Flit.Identity.Notifications;
 using Flit.Identity.Shared.Domain;
@@ -29,8 +30,8 @@ public sealed class IdentityWebApplicationFactory : WebApplicationFactory<Progra
     public Guid TenantAdminRoleId { get; private set; }
     public Guid TenantAdminUserId { get; private set; }
 
-    public string TenantAdminEmail => "admin@tenant-a.com";
-    public string TenantAdminPassword => "SecurePass!123";
+    public string TenantAdminEmail => DevTenantSeeder.TenantAdminEmail;
+    public string TenantAdminPassword => DevTenantSeeder.TenantAdminPassword;
 
     public HttpClient AnonymousClient => CreateClient();
 
@@ -48,6 +49,7 @@ public sealed class IdentityWebApplicationFactory : WebApplicationFactory<Progra
                 ["ConnectionStrings:Identity"] = _postgres.GetConnectionString(),
                 ["Identity:BootstrapEmail"] = "super@flit.local",
                 ["Identity:BootstrapPassword"] = "ChangeMe!123",
+                ["Identity:EnableRateLimiting"] = "true",
                 ["App:PublicBaseUrl"] = "http://localhost:5000"
             });
         });
@@ -70,62 +72,22 @@ public sealed class IdentityWebApplicationFactory : WebApplicationFactory<Progra
         var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
         var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
 
-        var tenant = new Tenant
-        {
-            Id = Guid.NewGuid(),
-            Name = "Tenant A",
-            Slug = "tenant-a",
-            CreatedAt = DateTimeOffset.UtcNow
-        };
-        db.Tenants.Add(tenant);
+        await DevTenantSeeder.SeedAsync(db, hasher);
+
+        var tenant = await db.Tenants.SingleAsync(t => t.Slug == "tenant-a");
         TenantId = tenant.Id;
 
-        var usersCreate = await db.Permissions.SingleAsync(p => p.Key == "users:create");
-        var usersRead = await db.Permissions.SingleAsync(p => p.Key == "users:read");
-        var usersUpdate = await db.Permissions.SingleAsync(p => p.Key == "users:update");
-
-        var adminRole = new Role
-        {
-            Id = Guid.NewGuid(),
-            TenantId = tenant.Id,
-            Name = "TenantA-Admin",
-            IsSystem = false,
-            CreatedAt = DateTimeOffset.UtcNow
-        };
-        db.Roles.Add(adminRole);
+        var adminRole = await db.Roles.SingleAsync(r =>
+            r.TenantId == tenant.Id && r.Name == "TenantA-Admin");
         TenantAdminRoleId = adminRole.Id;
-        db.RolePermissions.AddRange(
-            new RolePermission { RoleId = adminRole.Id, PermissionId = usersCreate.Id, Scope = PermissionScope.Tenant },
-            new RolePermission { RoleId = adminRole.Id, PermissionId = usersRead.Id, Scope = PermissionScope.Tenant },
-            new RolePermission { RoleId = adminRole.Id, PermissionId = usersUpdate.Id, Scope = PermissionScope.Tenant });
 
-        var operatorRole = new Role
-        {
-            Id = Guid.NewGuid(),
-            TenantId = tenant.Id,
-            Name = "TenantA-Operator",
-            IsSystem = false,
-            CreatedAt = DateTimeOffset.UtcNow
-        };
-        db.Roles.Add(operatorRole);
+        var operatorRole = await db.Roles.SingleAsync(r =>
+            r.TenantId == tenant.Id && r.Name == "TenantA-Operator");
         TenantOperatorRoleId = operatorRole.Id;
 
-        var adminUser = new User
-        {
-            Id = Guid.NewGuid(),
-            Email = TenantAdminEmail,
-            PasswordHash = hasher.Hash(TenantAdminPassword),
-            TenantId = tenant.Id,
-            Status = UserStatus.Active,
-            TokenVersion = 1,
-            CreatedAt = DateTimeOffset.UtcNow,
-            ActivatedAt = DateTimeOffset.UtcNow
-        };
-        db.Users.Add(adminUser);
+        var adminUser = await db.Users.SingleAsync(u => u.Email == DevTenantSeeder.TenantAdminEmail);
         TenantAdminUserId = adminUser.Id;
-        db.UserRoles.Add(new UserRole { UserId = adminUser.Id, RoleId = adminRole.Id });
 
-        await db.SaveChangesAsync();
         _tenantSeeded = true;
     }
 

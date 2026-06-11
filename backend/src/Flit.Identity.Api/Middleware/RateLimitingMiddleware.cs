@@ -1,10 +1,17 @@
 using System.Text.Json;
 using Flit.Identity.Auth;
 using Flit.Identity.Shared.Errors;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 
 namespace Flit.Identity.Api.Middleware;
 
-public sealed class RateLimitingMiddleware(RequestDelegate next, AuthRateLimiter rateLimiter)
+public sealed class RateLimitingMiddleware(
+    RequestDelegate next,
+    AuthRateLimiter rateLimiter,
+    IWebHostEnvironment env,
+    IConfiguration configuration)
 {
     private static readonly HashSet<string> RateLimitedPaths = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -14,7 +21,11 @@ public sealed class RateLimitingMiddleware(RequestDelegate next, AuthRateLimiter
 
     public async Task InvokeAsync(HttpContext context)
     {
-        if (HttpMethods.IsPost(context.Request.Method)
+        var rateLimitingEnabled = configuration.GetValue<bool?>("Identity:EnableRateLimiting")
+            ?? !env.IsDevelopment();
+
+        if (rateLimitingEnabled
+            && HttpMethods.IsPost(context.Request.Method)
             && RateLimitedPaths.Contains(context.Request.Path.Value ?? ""))
         {
             var email = await ReadEmailAsync(context.Request);

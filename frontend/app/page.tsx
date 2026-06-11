@@ -1,7 +1,11 @@
-import Link from "next/link";
 import { Can } from "@/components/auth/Can";
 import { SessionRevokedBanner } from "@/components/auth/SessionRevokedBanner";
 import { LogoutButton } from "@/components/auth/LogoutButton";
+import { AppShell } from "@/components/flit/AppShell";
+import { FlitCard, PageHeaderCard } from "@/components/flit/Card";
+import { FlitLink } from "@/components/flit/Link";
+import { GradientButton } from "@/components/flit/Button";
+import { buildAdminNav } from "@/lib/flit/nav";
 import { getSessionOrRedirect } from "@/lib/auth/session";
 
 export default async function HomePage({
@@ -10,38 +14,49 @@ export default async function HomePage({
   searchParams: Promise<{ revoked?: string }>;
 }) {
   const session = await getSessionOrRedirect();
-
   const params = await searchParams;
+  const hasAdminNav = buildAdminNav(session).length > 1;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 p-8">
+    <AppShell
+      email={session.email}
+      nav={buildAdminNav(session)}
+      headerActions={<LogoutButton />}
+    >
       {params.revoked === "1" && <SessionRevokedBanner />}
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">FLIT Identidad</h1>
-        <div className="flex items-center gap-4 text-sm text-zinc-600">
-          <span>{session.email}</span>
-          <LogoutButton />
+      <PageHeaderCard
+        title="FLIT Identidad"
+        subtitle="Sesión activa y permisos cargados"
+      />
+      <FlitCard>
+        <dl className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <dt className="text-sm font-semibold text-flit-text-secondary">Correo</dt>
+            <dd className="mt-1 text-base text-flit-text-primary">{session.email}</dd>
+          </div>
+          <div>
+            <dt className="text-sm font-semibold text-flit-text-secondary">Roles</dt>
+            <dd className="mt-1 text-base text-flit-text-primary">
+              {session.roles.join(", ") || "—"}
+            </dd>
+          </div>
+        </dl>
+        <div className="mt-8 flex flex-wrap gap-3">
+          {hasAdminNav && (
+            <FlitLink
+              href="/admin/users"
+              className="inline-flex min-h-11 items-center rounded-flit-pill border border-flit-border-soft bg-flit-bg-card px-6 text-sm font-semibold no-underline hover:bg-flit-bg-modal"
+            >
+              Administración
+            </FlitLink>
+          )}
+          <Can permission="generar_consolidado" session={session}>
+            <GradientButton className="min-h-11 px-6 text-sm">
+              Generar consolidado
+            </GradientButton>
+          </Can>
         </div>
-      </header>
-      <p className="text-zinc-700">
-        Sesión activa. Roles: {session.roles.join(", ") || "—"}
-      </p>
-      <div className="flex flex-wrap gap-3">
-        <Link
-          href="/admin/users"
-          className="rounded border border-zinc-300 px-4 py-2 text-sm hover:bg-zinc-50"
-        >
-          Administración
-        </Link>
-        <Can permission="generar_consolidado" session={session}>
-          <button
-            type="button"
-            className="rounded bg-emerald-700 px-4 py-2 text-sm text-white"
-          >
-            Generar consolidado
-          </button>
-        </Can>
-      </div>
-    </main>
+      </FlitCard>
+    </AppShell>
   );
 }

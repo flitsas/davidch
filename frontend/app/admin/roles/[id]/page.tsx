@@ -1,9 +1,11 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { apiFetch } from "@/lib/auth/api-client";
 import { getSessionOrRedirect, hasPermission } from "@/lib/auth/session";
 import type { PermissionCatalogItem, RoleDetail, RoleSummary } from "@/lib/admin/types";
 import { RolePermissionsEditor } from "@/components/admin/RolePermissionsEditor";
+import { PageHeaderCard } from "@/components/flit/Card";
+import { FlitCard } from "@/components/flit/Card";
+import { FlitLink } from "@/components/flit/Link";
 
 export default async function RoleDetailPage({
   params,
@@ -22,12 +24,12 @@ export default async function RoleDetailPage({
 
   if (!roleRes.ok) {
     return (
-      <main className="p-8">
-        <p>Rol no encontrado.</p>
-        <Link href="/admin/roles" className="underline">
-          Volver
-        </Link>
-      </main>
+      <FlitCard>
+        <p className="text-flit-text-secondary">Rol no encontrado.</p>
+        <FlitLink href="/admin/roles" className="mt-4 inline-block">
+          Volver a roles
+        </FlitLink>
+      </FlitCard>
     );
   }
 
@@ -36,18 +38,23 @@ export default async function RoleDetailPage({
   const allRoles: RoleSummary[] = allRolesRes.ok ? await allRolesRes.json() : [];
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <Link href="/admin/roles" className="text-sm underline">
-          ← Roles
-        </Link>
-        <h1 className="text-2xl font-semibold">{role.name}</h1>
-      </div>
-      {hasPermission(session, "roles:update") ? (
-        <RolePermissionsEditor role={role} catalog={catalog} allRoles={allRoles} />
-      ) : (
-        <p className="text-sm text-zinc-600">Solo lectura.</p>
-      )}
-    </div>
+    <>
+      <PageHeaderCard
+        title={role.name}
+        subtitle="Configuración de permisos del rol"
+        actions={
+          <FlitLink href="/admin/roles" className="text-sm">
+            ← Roles
+          </FlitLink>
+        }
+      />
+      <FlitCard>
+        {hasPermission(session, "roles:update") ? (
+          <RolePermissionsEditor role={role} catalog={catalog} allRoles={allRoles} />
+        ) : (
+          <p className="text-sm text-flit-text-secondary">Solo lectura.</p>
+        )}
+      </FlitCard>
+    </>
   );
 }

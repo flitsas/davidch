@@ -1,4 +1,14 @@
-import { APIRequestContext, Page } from "@playwright/test";
+import { APIRequestContext, Page, expect } from "@playwright/test";
+
+export const DEFAULT_ADMIN_EMAIL = "super@flit.local";
+export const DEFAULT_ADMIN_PASSWORD = "FlitDev2026!";
+
+export function adminCredentials() {
+  return {
+    email: process.env.E2E_ADMIN_EMAIL ?? DEFAULT_ADMIN_EMAIL,
+    password: process.env.E2E_ADMIN_PASSWORD ?? DEFAULT_ADMIN_PASSWORD,
+  };
+}
 
 export async function isStackAvailable(baseURL: string): Promise<boolean> {
   try {
@@ -10,14 +20,19 @@ export async function isStackAvailable(baseURL: string): Promise<boolean> {
 }
 
 export async function loginAsAdmin(page: Page) {
+  const { email, password } = adminCredentials();
   await page.goto("/login");
-  await page.fill('input[type="email"]', process.env.E2E_ADMIN_EMAIL ?? "super@flit.local");
-  await page.fill(
-    'input[type="password"]',
-    process.env.E2E_ADMIN_PASSWORD ?? "ChangeMe!123"
-  );
-  await page.click('button[type="submit"]');
-  await page.waitForURL(/\//);
+  await page.getByLabel("Correo").fill(email);
+  await page.getByLabel("Contraseña").fill(password);
+  await Promise.all([
+    page.waitForResponse(
+      (res) => res.url().includes("/api/auth/login") && res.ok(),
+      { timeout: 15_000 }
+    ),
+    page.getByRole("button", { name: "Entrar" }).click(),
+  ]);
+  await page.waitForURL((url) => url.pathname === "/", { timeout: 15_000 });
+  await expect(page.getByRole("heading", { name: "FLIT Identidad" })).toBeVisible();
 }
 
 export async function waitForMailhogToken(
