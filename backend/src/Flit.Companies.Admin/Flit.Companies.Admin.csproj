@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\Flit.Companies.Infrastructure\Flit.Companies.Infrastructure.csproj" />
+    <ProjectReference Include="..\Flit.Companies.Shared\Flit.Companies.Shared.csproj" />
+    <ProjectReference Include="..\Flit.Identity.Rbac\Flit.Identity.Rbac.csproj" />
+    <ProjectReference Include="..\Flit.Identity.Shared\Flit.Identity.Shared.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
