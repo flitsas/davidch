@@ -37,5 +37,23 @@ public class OtMigrationTests : IClassFixture<IdentityWebApplicationFactory>
         Assert.Contains("ot_document_order_items", names);
     }
 
+    [Fact]
+    public async Task Seed_creates_procedure_and_document_catalogs()
+    {
+        if (!_factory.IsDockerAvailable)
+        {
+            return;
+        }
+
+        using var scope = _factory.Services.CreateScope();
+        var otDb = scope.ServiceProvider.GetRequiredService<OtDbContext>();
+
+        var procedures = await otDb.ProcedureTypeCatalog.AsNoTracking().ToListAsync();
+        Assert.Contains(procedures, p => p.Code == "MATRICULA_INICIAL");
+
+        var documents = await otDb.DocumentTypeCatalog.AsNoTracking().ToListAsync();
+        Assert.True(documents.Count >= 5);
+    }
+
     private sealed record TableRow(string TableName);
 }

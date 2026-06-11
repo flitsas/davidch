@@ -7,6 +7,7 @@ using Flit.Companies.Runt.Endpoints;
 using Flit.Companies.Infrastructure.Persistence;
 using Flit.Companies.Infrastructure.Persistence.Seed;
 using Flit.OT.Infrastructure.Persistence;
+using Flit.OT.Infrastructure.Persistence.Seed;
 using Flit.Identity.Api.Middleware;
 using Flit.Identity.Auth;
 using Flit.Identity.Infrastructure.Audit;
@@ -80,6 +81,7 @@ using (var scope = app.Services.CreateScope())
 
     var otDb = scope.ServiceProvider.GetRequiredService<OtDbContext>();
     await otDb.Database.MigrateAsync();
+    await OtDbSeeder.SeedAsync(otDb);
 }
 
 app.UseMiddleware<RateLimitingMiddleware>();
