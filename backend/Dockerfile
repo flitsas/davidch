@@ -8,6 +8,8 @@ COPY src/Flit.Identity.Rbac/Flit.Identity.Rbac.csproj src/Flit.Identity.Rbac/
 COPY src/Flit.Identity.Notifications/Flit.Identity.Notifications.csproj src/Flit.Identity.Notifications/
 COPY src/Flit.Identity.Infrastructure/Flit.Identity.Infrastructure.csproj src/Flit.Identity.Infrastructure/
 COPY src/Flit.Identity.Shared/Flit.Identity.Shared.csproj src/Flit.Identity.Shared/
+COPY src/Flit.Companies.Shared/Flit.Companies.Shared.csproj src/Flit.Companies.Shared/
+COPY src/Flit.Companies.Infrastructure/Flit.Companies.Infrastructure.csproj src/Flit.Companies.Infrastructure/
 RUN dotnet restore src/Flit.Identity.Api/Flit.Identity.Api.csproj
 COPY src/ src/
 RUN dotnet publish src/Flit.Identity.Api/Flit.Identity.Api.csproj \
