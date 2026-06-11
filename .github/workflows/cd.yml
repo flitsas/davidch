@@ -196,6 +196,13 @@ jobs:
             set -euo pipefail
             cd "${{ secrets.HOSTINGER_DEPLOY_PATH }}"
 
+            # Warn if VPS .env still points at another developer's GHCR namespace.
+            NS="$(grep -E '^IMAGE_NAMESPACE=' .env 2>/dev/null | head -1 | cut -d= -f2- || true)"
+            NS="${NS:-davidch-dev}"
+            if [ "$NS" != "davidch-dev" ] && [ "${{ github.ref }}" = "refs/heads/develop" ]; then
+              echo "WARNING: IMAGE_NAMESPACE=$NS (expected davidch-dev for this repo). Update VPS .env."
+            fi
+
             # Authenticate to GHCR on the VPS to pull private images
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
@@ -209,8 +216,16 @@ jobs:
             # Health check: hit the container directly (bypass host nginx).
             # Lee los puertos del .env del proyecto (defaults = prod) para que
             # funcione igual en produccion y develop con sus propios puertos.
-            FE_PORT="$(grep -E '^FRONTEND_PORT=' .env 2>/dev/null | head -1 | cut -d= -f2 || true)"
-            GW_PORT="$(grep -E '^GATEWAY_PORT=' .env 2>/dev/null | head -1 | cut -d= -f2 || true)"
+            # Health check: resolve published host ports from the running stack
+            # (avoids mismatch when .env FRONTEND_PORT differs from defaults).
+            FE_PORT="$(docker compose -f docker-compose.prod.yml port frontend 3000 2>/dev/null | cut -d: -f2 || true)"
+            GW_PORT="$(docker compose -f docker-compose.prod.yml port gateway 8080 2>/dev/null | cut -d: -f2 || true)"
+            if [ -z "$FE_PORT" ]; then
+              FE_PORT="$(grep -E '^FRONTEND_PORT=' .env 2>/dev/null | head -1 | cut -d= -f2 || true)"
+            fi
+            if [ -z "$GW_PORT" ]; then
+              GW_PORT="$(grep -E '^GATEWAY_PORT=' .env 2>/dev/null | head -1 | cut -d= -f2 || true)"
+            fi
             FE_PORT="${FE_PORT:-40102}"
             GW_PORT="${GW_PORT:-40202}"
             echo "Waiting for application to start (front:$FE_PORT gateway:$GW_PORT)..."

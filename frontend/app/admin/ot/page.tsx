@@ -86,10 +86,7 @@ export default async function AdminOtPage({
                 {data.items.map((ot) => (
                   <tr key={ot.id} className="hover:bg-flit-bg-modal/50">
                     <td className="px-6 py-4 font-medium text-flit-text-primary">
-                      <Link
-                        href={`/admin/ot/${ot.id}`}
-                        className="text-flit-blue hover:underline"
-                      >
+                      <Link href={`/admin/ot/${ot.id}`} className="text-flit-blue hover:underline">
                         {ot.divipolCode}
                       </Link>
                     </td>

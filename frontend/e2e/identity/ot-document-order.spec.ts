@@ -23,7 +23,9 @@ test("tenant admin can reorder documents and persist after reload", async ({ pag
 
   await expect(async () => {
     await dragHandleToHandle(page, "doc-handle-TARJETA_PROPIEDAD", "doc-handle-CEDULA");
-    await expect(page.getByTestId("doc-row-TARJETA_PROPIEDAD").getByText("1", { exact: true })).toBeVisible({
+    await expect(
+      page.getByTestId("doc-row-TARJETA_PROPIEDAD").getByText("1", { exact: true }),
+    ).toBeVisible({
       timeout: 2_000,
     });
   }).toPass({ timeout: 15_000 });
@@ -43,10 +45,14 @@ test("tenant admin can reorder documents and persist after reload", async ({ pag
   const saved = (await response.json()) as {
     items: { document_type_code: string; position: number }[];
   };
-  expect(saved.items.find((item) => item.document_type_code === "TARJETA_PROPIEDAD")?.position).toBe(1);
+  expect(
+    saved.items.find((item) => item.document_type_code === "TARJETA_PROPIEDAD")?.position,
+  ).toBe(1);
 
   await page.reload();
-  await expect(page.getByTestId("doc-row-TARJETA_PROPIEDAD").getByText("1", { exact: true })).toBeVisible();
+  await expect(
+    page.getByTestId("doc-row-TARJETA_PROPIEDAD").getByText("1", { exact: true }),
+  ).toBeVisible();
   await expect(page.getByTestId("doc-row-CEDULA").getByText("2", { exact: true })).toBeVisible();
 });
 

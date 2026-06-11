@@ -7,8 +7,7 @@ export const DEFAULT_TENANT_ADMIN_PASSWORD = "SecurePass!123";
 
 export function getPlaywrightBaseUrl() {
   return (
-    process.env.PLAYWRIGHT_BASE_URL ??
-    `http://127.0.0.1:${process.env.FRONTEND_PORT ?? "40102"}`
+    process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${process.env.FRONTEND_PORT ?? "40102"}`
   );
 }
 
@@ -53,11 +52,7 @@ export async function loginAsTenantAdmin(page: Page) {
 }
 
 /** Pointer drag compatible with @dnd-kit sortable handles. */
-export async function dragHandleToHandle(
-  page: Page,
-  sourceTestId: string,
-  targetTestId: string,
-) {
+export async function dragHandleToHandle(page: Page, sourceTestId: string, targetTestId: string) {
   const source = page.getByTestId(sourceTestId);
   const target = page.getByTestId(targetTestId);
   await source.scrollIntoViewIfNeeded();
@@ -68,16 +63,11 @@ export async function dragHandleToHandle(
     throw new Error(`Missing drag handle bounds: ${sourceTestId} -> ${targetTestId}`);
   }
 
-  await page.mouse.move(
-    sourceBox.x + sourceBox.width / 2,
-    sourceBox.y + sourceBox.height / 2,
-  );
+  await page.mouse.move(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
   await page.mouse.down();
-  await page.mouse.move(
-    targetBox.x + targetBox.width / 2,
-    targetBox.y + targetBox.height / 2,
-    { steps: 20 },
-  );
+  await page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + targetBox.height / 2, {
+    steps: 20,
+  });
   await page.mouse.up();
 }
 

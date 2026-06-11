@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DocumentOrderList } from "@/components/ot/DocumentOrderList";
 import type { DocumentOrderItem, ProcedureTypeSummary } from "@/lib/ot/settings-api";
@@ -23,8 +23,6 @@ export function DocumentosTab({ otId, apiBase }: Props) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const itemsRef = useRef(items);
-  itemsRef.current = items;
 
   useEffect(() => {
     let cancelled = false;
@@ -41,7 +39,9 @@ export function DocumentosTab({ otId, apiBase }: Props) {
         setProcedureCode((current) => current || types[0]?.code || "");
       } catch (loadError) {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : "No se pudieron cargar los trámites");
+          setError(
+            loadError instanceof Error ? loadError.message : "No se pudieron cargar los trámites",
+          );
         }
       } finally {
         if (!cancelled) {
@@ -104,7 +104,7 @@ export function DocumentosTab({ otId, apiBase }: Props) {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ items: toDocumentOrderPayload(itemsRef.current) }),
+        body: JSON.stringify({ items: toDocumentOrderPayload(items) }),
       });
 
       if (!res.ok) {

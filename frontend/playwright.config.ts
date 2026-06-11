@@ -1,8 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
 const defaultBaseUrl =
-  process.env.PLAYWRIGHT_BASE_URL ??
-  `http://127.0.0.1:${process.env.FRONTEND_PORT ?? "40102"}`;
+  process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${process.env.FRONTEND_PORT ?? "40102"}`;
 
 export default defineConfig({
   testDir: "./e2e",

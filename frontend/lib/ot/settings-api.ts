@@ -55,7 +55,9 @@ export function procedureTypesPath(apiBase: "admin" | "settings"): string {
   return "/api/v1/ot/settings/procedure-types";
 }
 
-export async function fetchProcedureTypes(apiBase: "admin" | "settings"): Promise<ProcedureTypeSummary[]> {
+export async function fetchProcedureTypes(
+  apiBase: "admin" | "settings",
+): Promise<ProcedureTypeSummary[]> {
   if (apiBase === "admin") {
     return OT_PROCEDURE_TYPES;
   }
@@ -110,7 +112,10 @@ export function reorderIncludedItems(
   reorderedIncluded.splice(newIndex, 0, moved);
 
   const includedByCode = new Map(
-    reorderedIncluded.map((item, index) => [item.document_type_code, { ...item, position: index + 1 }]),
+    reorderedIncluded.map((item, index) => [
+      item.document_type_code,
+      { ...item, position: index + 1 },
+    ]),
   );
 
   return items.map((item) => includedByCode.get(item.document_type_code) ?? item);

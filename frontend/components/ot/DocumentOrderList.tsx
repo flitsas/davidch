@@ -17,7 +17,6 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useRef } from "react";
 import type { DocumentOrderItem } from "@/lib/ot/settings-api";
 import { normalizeDocumentOrderItems } from "@/lib/ot/settings-api";
 import { GradientButton } from "@/components/flit/Button";
@@ -71,7 +70,9 @@ function SortableRow({
         ⋮⋮
       </button>
 
-      <span className="min-w-8 text-xs font-semibold text-flit-text-secondary">{item.position}</span>
+      <span className="min-w-8 text-xs font-semibold text-flit-text-secondary">
+        {item.position}
+      </span>
 
       <div className="flex-1">
         <p className="text-sm font-medium text-flit-text-primary">{item.document_type_name}</p>
@@ -92,9 +93,6 @@ function SortableRow({
 }
 
 export function DocumentOrderList({ items, onChange, onSave, saving = false, error }: Props) {
-  const itemsRef = useRef(items);
-  itemsRef.current = items;
-
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -107,7 +105,7 @@ export function DocumentOrderList({ items, onChange, onSave, saving = false, err
   const displayItems = [...includedItems, ...excludedItems];
 
   function onToggleIncluded(code: string, included: boolean) {
-    const next = itemsRef.current.map((item) =>
+    const next = items.map((item) =>
       item.document_type_code === code ? { ...item, is_included: included } : item,
     );
     onChange(normalizeDocumentOrderItems(next));
@@ -119,8 +117,7 @@ export function DocumentOrderList({ items, onChange, onSave, saving = false, err
       return;
     }
 
-    const currentItems = itemsRef.current;
-    const included = currentItems
+    const included = items
       .filter((item) => item.is_included)
       .toSorted((a, b) => a.position - b.position);
     const oldIndex = included.findIndex((item) => item.document_type_code === active.id);
@@ -133,8 +130,7 @@ export function DocumentOrderList({ items, onChange, onSave, saving = false, err
       ...item,
       position: index + 1,
     }));
-    const includedByCode = new Map(reordered.map((item) => [item.document_type_code, item]));
-    const excluded = currentItems.filter((item) => !item.is_included);
+    const excluded = items.filter((item) => !item.is_included);
 
     onChange([...reordered, ...excluded]);
   }
@@ -148,7 +144,11 @@ export function DocumentOrderList({ items, onChange, onSave, saving = false, err
         >
           <ul className="space-y-2" data-testid="document-order-list">
             {displayItems.map((item) => (
-              <SortableRow key={item.document_type_code} item={item} onToggleIncluded={onToggleIncluded} />
+              <SortableRow
+                key={item.document_type_code}
+                item={item}
+                onToggleIncluded={onToggleIncluded}
+              />
             ))}
           </ul>
         </SortableContext>
