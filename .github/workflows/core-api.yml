@@ -28,6 +28,13 @@ jobs:
         working-directory: services/core-api
         run: dotnet build Flit.Identity.sln --no-restore --configuration Release
 
+      - name: Generate test JWT keys
+        working-directory: services/core-api
+        run: |
+          mkdir -p keys
+          openssl genrsa -out keys/jwt-private.pem 2048
+          openssl rsa -in keys/jwt-private.pem -pubout -out keys/jwt-public.pem
+
       - name: Test
         working-directory: services/core-api
         run: dotnet test Flit.Identity.sln --no-build --configuration Release --logger "trx" --collect "XPlat Code Coverage"

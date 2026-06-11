@@ -18,6 +18,18 @@ public sealed class RsaJwtService
     public RsaJwtService(IConfiguration config, IWebHostEnvironment env)
     {
         _config = config;
+
+        if (config.GetValue("Jwt:DevGenerate", false))
+        {
+            var rsa = RSA.Create(2048);
+            _signingKey = new RsaSecurityKey(rsa);
+
+            var publicOnly = RSA.Create();
+            publicOnly.ImportParameters(rsa.ExportParameters(false));
+            _validationKey = new RsaSecurityKey(publicOnly);
+            return;
+        }
+
         _signingKey = LoadPrivateKey(ResolveKeyPath(config["Jwt:PrivateKeyPath"]!, env));
         _validationKey = LoadPublicKey(ResolveKeyPath(config["Jwt:PublicKeyPath"]!, env));
     }

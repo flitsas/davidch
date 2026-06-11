@@ -26,7 +26,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Frontend audit
-        run: pnpm --filter @flit/frontend audit --prod --audit-level high
+        run: pnpm -C frontend audit --prod --audit-level high
 
   secret-scan:
     runs-on: ubuntu-latest

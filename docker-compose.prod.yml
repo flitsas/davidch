@@ -3,22 +3,22 @@
 # Postgres NO esta aqui: corre en el HOST (host.docker.internal:5432).
 # El reverse-proxy del HOST termina TLS y enruta los dominios a los puertos
 # publicados en 127.0.0.1:
-#   jormanc.flitsas.online      -> frontend  (127.0.0.1:60106)
-#   api.jormanc.flitsas.online  -> gateway   (127.0.0.1:60206)  [API publica YARP]
-#   core.jormanc.flitsas.online -> core-api  (127.0.0.1:60306)  [Flit.Api interno/debug]
+#   dev.davidch.flitsas.online      -> frontend  (127.0.0.1:40102)
+#   dev.api.davidch.flitsas.online  -> gateway   (127.0.0.1:40202)  [API publica YARP]
+#   core (debug)                    -> core-api  (127.0.0.1:40302)
 #
 # Variables requeridas en .env (junto al compose):
 #   CONNECTION_STRING_CORE  cadena Npgsql .NET (Host=...;Port=5432;Database=...;Username=...;Password=...)
-#   CORS_ORIGIN             origen permitido del frontend (https://jormanc.flitsas.online)
+#   CORS_ORIGIN             origen permitido del frontend (https://dev.davidch.flitsas.online)
 #   VERIFIK_API_TOKEN       token Verifik (RUNT)
 # Variables para AISLAR este proyecto del resto del VPS (UNICAS por proyecto):
-#   COMPOSE_PROJECT_NAME    nombre del proyecto Compose (default: flit-prod)
-#   FRONTEND_PORT / GATEWAY_PORT / CORE_API_PORT   puertos host 127.0.0.1 (defaults: 60106/60206/60306)
+#   COMPOSE_PROJECT_NAME    nombre del proyecto Compose (default: flit-dev)
+#   FRONTEND_PORT / GATEWAY_PORT / CORE_API_PORT   puertos host 127.0.0.1
 # Variables opcionales:
-#   CORE_API_TAG / FRONTEND_TAG   tag de imagen (default: latest)
+#   CORE_API_TAG / FRONTEND_TAG / GATEWAY_TAG   tag de imagen (default: develop)
 #   VERIFIK_BASE_URL / VERIFIK_TIMEOUT_SECONDS
 #
-# NOTA: login deshabilitado temporalmente -> NO se requieren llaves JWT.
+# NOTA: login deshabilitado temporalmente -> Jwt__DevGenerate genera llaves efimeras.
 #
 # Despliegue:
 #   docker compose -f docker-compose.prod.yml pull
@@ -38,29 +38,23 @@ x-default-logging: &default-logging
     max-file: '5'
 
 services:
-  # ── Flit.Api (interno, detras de YARP) ────────────────────────────────────
+  # ── Flit.Identity.Api (interno, detras de YARP) ───────────────────────────
   core-api:
-    image: ghcr.io/flitsas/${IMAGE_NAMESPACE:-davidch-dev}/core-api:${CORE_API_TAG:-latest}
-    command: ["dotnet", "/app/api/Flit.Api.dll"]
-    # content root = working_dir, para que .NET encuentre su appsettings.json
-    working_dir: /app/api
+    image: ghcr.io/flitsas/${IMAGE_NAMESPACE:-davidch-dev}/core-api:${CORE_API_TAG:-develop}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
-      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENV:-Develop}
-      ASPNETCORE_URLS: http://+:8081
-      ConnectionStrings__Core: ${CONNECTION_STRING_CORE}
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENV:-Development}
+      ConnectionStrings__Identity: ${CONNECTION_STRING_CORE}
       Cors__AllowedOrigins: ${CORS_ORIGIN:-https://dev.davidch.flitsas.online}
-      # Login deshabilitado temporalmente: DevGenerate evita exigir llaves JWT
-      # montadas. Para reactivar login, montar jwt-private/public.pem y quitar esto.
       Jwt__DevGenerate: "true"
       Verifik__BearerToken: ${VERIFIK_API_TOKEN:-}
       Verifik__BaseUrl: ${VERIFIK_BASE_URL:-https://api.verifik.co}
       Verifik__TimeoutSeconds: ${VERIFIK_TIMEOUT_SECONDS:-30}
     ports:
-      - "127.0.0.1:${CORE_API_PORT:-40302}:8081"
+      - "127.0.0.1:${CORE_API_PORT:-40302}:80"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8081/api/v1/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:80/api/health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -70,23 +64,18 @@ services:
 
   # ── Flit.Gateway (API publica YARP: /api, /hubs) ──────────────────────────
   gateway:
-    image: ghcr.io/flitsas/${IMAGE_NAMESPACE:-davidch-dev}/core-api:${CORE_API_TAG:-latest}
-    command: ["dotnet", "/app/gateway/Flit.Gateway.dll"]
-    # content root = working_dir, para que YARP cargue sus rutas de appsettings.json
-    working_dir: /app/gateway
+    image: ghcr.io/flitsas/${IMAGE_NAMESPACE:-davidch-dev}/gateway:${GATEWAY_TAG:-develop}
     environment:
-      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENV:-Develop}
+      ASPNETCORE_ENVIRONMENT: Docker
       ASPNETCORE_URLS: http://+:8080
       Cors__AllowedOrigins__0: ${CORS_ORIGIN:-https://dev.davidch.flitsas.online}
-      # Login deshabilitado temporalmente: sin llave JWT el gateway no valida firma
-      # ni exige autenticación (ver Flit.Gateway/Program.cs).
     ports:
       - "127.0.0.1:${GATEWAY_PORT:-40202}:8080"
     depends_on:
       core-api:
-        condition: service_started
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -96,12 +85,13 @@ services:
 
   # ── Frontend (Next.js standalone) ─────────────────────────────────────────
   frontend:
-    image: ghcr.io/flitsas/${IMAGE_NAMESPACE:-davidch-dev}/frontend:${FRONTEND_TAG:-latest}
+    image: ghcr.io/flitsas/${IMAGE_NAMESPACE:-davidch-dev}/frontend:${FRONTEND_TAG:-develop}
     environment:
       API_BASE_URL: http://gateway:8080
     ports:
       - "127.0.0.1:${FRONTEND_PORT:-40102}:3000"
     depends_on:
-      - gateway
+      gateway:
+        condition: service_healthy
     restart: *restart
     logging: *default-logging
