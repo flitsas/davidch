@@ -6,6 +6,7 @@ using Flit.Companies.Runt;
 using Flit.Companies.Runt.Endpoints;
 using Flit.Companies.Infrastructure.Persistence;
 using Flit.Companies.Infrastructure.Persistence.Seed;
+using Flit.OT.Infrastructure.Persistence;
 using Flit.Identity.Api.Middleware;
 using Flit.Identity.Auth;
 using Flit.Identity.Infrastructure.Audit;
@@ -24,6 +25,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<IdentityDbContext>(o =>
     o.UseNpgsql(builder.Configuration.GetConnectionString("Identity")));
 builder.Services.AddDbContext<CompaniesDbContext>(o =>
+    o.UseNpgsql(builder.Configuration.GetConnectionString("Identity")));
+builder.Services.AddDbContext<OtDbContext>(o =>
     o.UseNpgsql(builder.Configuration.GetConnectionString("Identity")));
 builder.Services.AddScoped<ITenantContext, TenantContext>();
 builder.Services.AddScoped<IPasswordHasher, Argon2PasswordHasher>();
@@ -74,6 +77,9 @@ using (var scope = app.Services.CreateScope())
     var companiesDb = scope.ServiceProvider.GetRequiredService<CompaniesDbContext>();
     await companiesDb.Database.MigrateAsync();
     await CompaniesDbSeeder.SeedAsync(companiesDb);
+
+    var otDb = scope.ServiceProvider.GetRequiredService<OtDbContext>();
+    await otDb.Database.MigrateAsync();
 }
 
 app.UseMiddleware<RateLimitingMiddleware>();
