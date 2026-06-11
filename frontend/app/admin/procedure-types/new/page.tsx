@@ -1,21 +1,14 @@
-import { PageHeaderCard, FlitCard } from "@/components/flit/Card";
-import { FlitLink } from "@/components/flit/Link";
+import { PageHeaderCard } from "@/components/flit/Card";
+import { ProcedureTypeWizard } from "@/components/admin/ProcedureTypeWizard";
 
-export default function NewProcedureTypePlaceholderPage() {
+export default function NewProcedureTypePage() {
   return (
     <>
       <PageHeaderCard
         title="Nuevo tipo de trámite"
-        subtitle="Asistente de parametrización — disponible en la siguiente entrega"
+        subtitle="Asistente de parametrización — 4 pasos"
       />
-      <FlitCard>
-        <p className="text-sm text-flit-text-secondary">
-          El wizard de creación se implementa en la historia #10005.
-        </p>
-        <FlitLink href="/admin/procedure-types" className="mt-4 inline-block">
-          Volver al listado
-        </FlitLink>
-      </FlitCard>
+      <ProcedureTypeWizard mode="create" />
     </>
   );
 }
