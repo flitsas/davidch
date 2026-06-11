@@ -8,6 +8,7 @@
     <ProjectReference Include="..\Flit.Identity.Infrastructure\Flit.Identity.Infrastructure.csproj" />
     <ProjectReference Include="..\Flit.Companies.Infrastructure\Flit.Companies.Infrastructure.csproj" />
     <ProjectReference Include="..\Flit.Companies.Admin\Flit.Companies.Admin.csproj" />
+    <ProjectReference Include="..\Flit.Companies.Runt\Flit.Companies.Runt.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -17,6 +18,7 @@
     </PackageReference>
     <ProjectReference Include="..\Flit.Companies.Infrastructure\Flit.Companies.Infrastructure.csproj" />
     <ProjectReference Include="..\Flit.Companies.Admin\Flit.Companies.Admin.csproj" />
+    <ProjectReference Include="..\Flit.Companies.Runt\Flit.Companies.Runt.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

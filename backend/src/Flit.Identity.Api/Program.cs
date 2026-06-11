@@ -4,6 +4,8 @@ using Flit.Companies.Admin.Endpoints;
 using Flit.Companies.Admin.Index;
 using Flit.Companies.Admin.Crud;
 using Flit.Companies.Admin.Config;
+using Flit.Companies.Runt;
+using Flit.Companies.Runt.Endpoints;
 using Flit.Identity.Api.Middleware;
 using Flit.Identity.Auth;
 using Flit.Identity.Infrastructure.Audit;
@@ -46,6 +48,10 @@ builder.Services.AddScoped<CompanyIndexHandler>();
 builder.Services.AddScoped<CompanyCrudHandler>();
 builder.Services.AddScoped<CompanyConfigHandler>();
 builder.Services.AddScoped<CompanyExceptionsHandler>();
+builder.Services.AddSingleton<VerifikAdapter>();
+builder.Services.AddSingleton<IntempoStubAdapter>();
+builder.Services.AddScoped<RuntProxy>();
+builder.Services.AddScoped<RuntQueryHandler>();
 builder.Services.AddSingleton<AuthorizationService>();
 builder.Services.AddSingleton<RoleConflictAnalyzer>();
 builder.Services.AddAuthorization();
@@ -79,6 +85,7 @@ app.MapRbacEndpoints();
 app.MapUsersEndpoints();
 app.MapTenantsEndpoints();
 app.MapCompaniesAdminEndpoints();
+app.MapRuntEndpoints();
 
 app.Run();
 
