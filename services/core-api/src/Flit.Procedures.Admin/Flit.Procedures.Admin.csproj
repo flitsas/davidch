@@ -9,6 +9,8 @@
     <ProjectReference Include="..\Flit.Procedures.Infrastructure\Flit.Procedures.Infrastructure.csproj" />
     <ProjectReference Include="..\Flit.Procedures.Shared\Flit.Procedures.Shared.csproj" />
     <ProjectReference Include="..\Flit.OT.Infrastructure\Flit.OT.Infrastructure.csproj" />
+    <ProjectReference Include="..\Flit.Identity.Rbac\Flit.Identity.Rbac.csproj" />
+    <ProjectReference Include="..\Flit.Identity.Shared\Flit.Identity.Shared.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
