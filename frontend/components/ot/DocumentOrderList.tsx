@@ -11,11 +11,13 @@ import {
 } from "@dnd-kit/core";
 import {
   SortableContext,
+  arrayMove,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useRef } from "react";
 import type { DocumentOrderItem } from "@/lib/ot/settings-api";
 import { normalizeDocumentOrderItems } from "@/lib/ot/settings-api";
 import { GradientButton } from "@/components/flit/Button";
@@ -90,17 +92,22 @@ function SortableRow({
 }
 
 export function DocumentOrderList({ items, onChange, onSave, saving = false, error }: Props) {
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  const includedItems = items.filter((item) => item.is_included);
+  const includedItems = items
+    .filter((item) => item.is_included)
+    .toSorted((a, b) => a.position - b.position);
   const excludedItems = items.filter((item) => !item.is_included);
   const displayItems = [...includedItems, ...excludedItems];
 
   function onToggleIncluded(code: string, included: boolean) {
-    const next = items.map((item) =>
+    const next = itemsRef.current.map((item) =>
       item.document_type_code === code ? { ...item, is_included: included } : item,
     );
     onChange(normalizeDocumentOrderItems(next));
@@ -112,21 +119,24 @@ export function DocumentOrderList({ items, onChange, onSave, saving = false, err
       return;
     }
 
-    const oldIndex = includedItems.findIndex((item) => item.document_type_code === active.id);
-    const newIndex = includedItems.findIndex((item) => item.document_type_code === over.id);
+    const currentItems = itemsRef.current;
+    const included = currentItems
+      .filter((item) => item.is_included)
+      .toSorted((a, b) => a.position - b.position);
+    const oldIndex = included.findIndex((item) => item.document_type_code === active.id);
+    const newIndex = included.findIndex((item) => item.document_type_code === over.id);
     if (oldIndex < 0 || newIndex < 0) {
       return;
     }
 
-    const reordered = [...includedItems];
-    const [moved] = reordered.splice(oldIndex, 1);
-    reordered.splice(newIndex, 0, moved);
+    const reordered = arrayMove(included, oldIndex, newIndex).map((item, index) => ({
+      ...item,
+      position: index + 1,
+    }));
+    const includedByCode = new Map(reordered.map((item) => [item.document_type_code, item]));
+    const excluded = currentItems.filter((item) => !item.is_included);
 
-    const includedByCode = new Map(
-      reordered.map((item, index) => [item.document_type_code, { ...item, position: index + 1 }]),
-    );
-
-    onChange(items.map((item) => includedByCode.get(item.document_type_code) ?? item));
+    onChange([...reordered, ...excluded]);
   }
 
   return (

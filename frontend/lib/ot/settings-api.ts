@@ -68,13 +68,20 @@ export async function fetchProcedureTypes(apiBase: "admin" | "settings"): Promis
 }
 
 export function normalizeDocumentOrderItems(items: DocumentOrderItem[]): DocumentOrderItem[] {
-  let includedPosition = 0;
+  const includedSorted = items
+    .filter((item) => item.is_included)
+    .toSorted((a, b) => a.position - b.position);
+
+  const positionByCode = new Map(
+    includedSorted.map((item, index) => [item.document_type_code, index + 1]),
+  );
+
   return items.map((item) => {
     if (!item.is_included) {
       return item;
     }
-    includedPosition += 1;
-    return { ...item, position: includedPosition };
+
+    return { ...item, position: positionByCode.get(item.document_type_code) ?? item.position };
   });
 }
 
