@@ -4,6 +4,7 @@ import type { OtDetail, OtTab } from "@/lib/admin/ot-types";
 import { parseOtTab } from "@/lib/admin/ot-types";
 import { otStatusLabel } from "@/lib/admin/ot-api";
 import { OtTabs } from "@/components/admin/OtTabs";
+import { IntegracionTab } from "@/components/admin/ot-tabs/IntegracionTab";
 import { PerfilTab } from "@/components/admin/ot-tabs/PerfilTab";
 import { PageHeaderCard } from "@/components/flit/Card";
 import { FlitCard } from "@/components/flit/Card";
@@ -15,11 +16,7 @@ function TabPanel({ ot, tab }: { ot: OtDetail; tab: OtTab }) {
     case "perfil":
       return <PerfilTab ot={ot} />;
     case "integracion":
-      return (
-        <p className="text-sm text-flit-text-secondary">
-          La configuración de integración Dashboard/QX estará disponible en la siguiente historia.
-        </p>
-      );
+      return <IntegracionTab otId={ot.id} apiBase="admin" />;
     case "documentos":
       return (
         <p className="text-sm text-flit-text-secondary">
