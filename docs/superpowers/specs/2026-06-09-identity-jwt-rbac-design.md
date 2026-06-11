@@ -16,7 +16,7 @@ This spec covers all 14 functional requirements (RF01–RF14) and 35 functional 
 | Area | Decision |
 |------|----------|
 | Scope | Full feature — all 14 RFs; decompose into stories later |
-| Frontend | Next.js 16 App Router (`flit2`) |
+| Frontend | Next.js 16 App Router (`frontend/` in monorepo) |
 | Backend | .NET modular monolith behind YARP gateway |
 | Backend modules | Auth, Users, RBAC, Notifications (single deployable) |
 | Routing | Unified domain (Approach 1): YARP routes `/api/*` → .NET, `/*` → Next.js |

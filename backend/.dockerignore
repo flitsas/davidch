@@ -1,0 +1,10 @@
+**/bin
+**/obj
+**/.vs
+**/*.user
+tests/
+keys/*.pem
+.git
+.env*
+*.md
+.DS_Store

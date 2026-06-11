@@ -1,0 +1,135 @@
+@import "tailwindcss";
+
+/* FLIT design tokens — source: flit_design_tokens.json */
+:root {
+  --flit-bg-app: #eaf2ff;
+  --flit-bg-modal: #eef5ff;
+  --flit-bg-card: #ffffff;
+  --flit-bg-table-header: #f4f6fa;
+
+  --flit-cyan: #4fd4cc;
+  --flit-blue: #4f74c9;
+  --flit-blue-dark: #162744;
+  --flit-blue-text: #526fb8;
+  --flit-green: #70cf3a;
+
+  --flit-success: #70cf3a;
+  --flit-active: #4f74c9;
+  --flit-warning: #f05a35;
+  --flit-danger: #e43d30;
+  --flit-draft: #59677d;
+  --flit-muted: #7d8798;
+
+  --flit-border-soft: #dde5f0;
+  --flit-border-input: #d9dee8;
+  --flit-border-focus: #4f74c9;
+
+  --flit-text-primary: #162744;
+  --flit-text-secondary: #59677d;
+  --flit-text-muted: #7d8798;
+  --flit-text-inverse: #ffffff;
+  --flit-text-brand: #526fb8;
+
+  --flit-gradient-primary: linear-gradient(90deg, #4fd4cc 0%, #4f74c9 100%);
+  --flit-gradient-success: linear-gradient(90deg, #4fd4cc 0%, #70cf3a 100%);
+  --flit-gradient-sidebar: linear-gradient(180deg, #4fd4cc 0%, #4f74c9 100%);
+  --flit-gradient-danger: linear-gradient(90deg, #f05a35 0%, #e43d30 100%);
+
+  --flit-radius-sm: 8px;
+  --flit-radius-md: 12px;
+  --flit-radius-lg: 18px;
+  --flit-radius-xl: 24px;
+  --flit-radius-pill: 999px;
+  --flit-radius-sidebar: 56px;
+
+  --flit-shadow-card: 0 8px 24px rgba(22, 39, 68, 0.08);
+  --flit-shadow-modal: 0 24px 60px rgba(22, 39, 68, 0.18);
+  --flit-shadow-button: 0 10px 22px rgba(79, 116, 201, 0.22);
+
+  --flit-duration-fast: 120ms;
+  --flit-duration-base: 180ms;
+  --flit-easing: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@theme inline {
+  --color-flit-bg-app: var(--flit-bg-app);
+  --color-flit-bg-modal: var(--flit-bg-modal);
+  --color-flit-bg-card: var(--flit-bg-card);
+  --color-flit-bg-table-header: var(--flit-bg-table-header);
+
+  --color-flit-cyan: var(--flit-cyan);
+  --color-flit-blue: var(--flit-blue);
+  --color-flit-blue-dark: var(--flit-blue-dark);
+  --color-flit-blue-text: var(--flit-blue-text);
+  --color-flit-green: var(--flit-green);
+
+  --color-flit-success: var(--flit-success);
+  --color-flit-active: var(--flit-active);
+  --color-flit-warning: var(--flit-warning);
+  --color-flit-danger: var(--flit-danger);
+  --color-flit-draft: var(--flit-draft);
+  --color-flit-muted: var(--flit-muted);
+
+  --color-flit-border-soft: var(--flit-border-soft);
+  --color-flit-border-input: var(--flit-border-input);
+  --color-flit-border-focus: var(--flit-border-focus);
+
+  --color-flit-text-primary: var(--flit-text-primary);
+  --color-flit-text-secondary: var(--flit-text-secondary);
+  --color-flit-text-muted: var(--flit-text-muted);
+  --color-flit-text-inverse: var(--flit-text-inverse);
+  --color-flit-text-brand: var(--flit-text-brand);
+
+  --font-sans: var(--font-poppins), system-ui, sans-serif;
+  --radius-flit-lg: var(--flit-radius-lg);
+  --radius-flit-xl: var(--flit-radius-xl);
+  --radius-flit-pill: var(--flit-radius-pill);
+  --shadow-flit-card: var(--flit-shadow-card);
+  --shadow-flit-button: var(--flit-shadow-button);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    background-color: var(--flit-bg-app);
+    color: var(--flit-text-primary);
+    font-family: var(--font-sans);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  .flit-gradient-primary {
+    background-image: var(--flit-gradient-primary);
+  }
+
+  .flit-gradient-success {
+    background-image: var(--flit-gradient-success);
+  }
+
+  .flit-gradient-sidebar {
+    background-image: var(--flit-gradient-sidebar);
+  }
+
+  .flit-gradient-danger {
+    background-image: var(--flit-gradient-danger);
+  }
+
+  .flit-focus-ring {
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-flit-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-flit-bg-app;
+  }
+}
