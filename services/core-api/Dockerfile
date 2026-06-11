@@ -22,9 +22,9 @@ RUN dotnet publish src/Flit.Identity.Api/Flit.Identity.Api.csproj \
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS runtime
 WORKDIR /app
 RUN apk add --no-cache curl
-ENV ASPNETCORE_URLS=http://+:5080
+ENV ASPNETCORE_URLS=http://+:80
 COPY --from=build /app/publish .
-EXPOSE 5080
+EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
-  CMD curl -f http://127.0.0.1:5080/api/health || exit 1
+  CMD curl -f http://127.0.0.1:80/api/health || exit 1
 CMD ["dotnet", "Flit.Identity.Api.dll"]
