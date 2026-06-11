@@ -2,11 +2,7 @@ import { FlitCard } from "@/components/flit/Card";
 import { FlitLink } from "@/components/flit/Link";
 import { getSessionOrRedirect } from "@/lib/auth/session";
 
-export default async function AdminCompaniesLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function AdminCompaniesLayout({ children }: { children: React.ReactNode }) {
   const session = await getSessionOrRedirect();
 
   if (!session.isSuperAdmin) {

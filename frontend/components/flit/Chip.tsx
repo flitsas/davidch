@@ -8,13 +8,7 @@ const chipStyles: Record<ChipVariant, string> = {
   draft: "bg-flit-draft/15 text-flit-draft",
 };
 
-export function StatusChip({
-  label,
-  variant = "draft",
-}: {
-  label: string;
-  variant?: ChipVariant;
-}) {
+export function StatusChip({ label, variant = "draft" }: { label: string; variant?: ChipVariant }) {
   return (
     <span
       className={[

@@ -9,12 +9,7 @@ type Props = {
   searchParams: CompaniesIndexSearchParams;
 };
 
-export function CompaniesPagination({
-  page,
-  pageSize,
-  totalCount,
-  searchParams,
-}: Props) {
+export function CompaniesPagination({ page, pageSize, totalCount, searchParams }: Props) {
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   if (totalPages <= 1) return null;
 

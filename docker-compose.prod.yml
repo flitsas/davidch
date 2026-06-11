@@ -94,11 +94,13 @@ services:
     restart: *restart
     logging: *default-logging
 
-  # ── Frontend (React/Vite + nginx, solo estaticos) ─────────────────────────
+  # ── Frontend (Next.js standalone) ─────────────────────────────────────────
   frontend:
     image: ghcr.io/flitsas/${IMAGE_NAMESPACE:-davidch-dev}/frontend:${FRONTEND_TAG:-latest}
+    environment:
+      API_BASE_URL: http://gateway:8080
     ports:
-      - "127.0.0.1:${FRONTEND_PORT:-40102}:80"
+      - "127.0.0.1:${FRONTEND_PORT:-40102}:3000"
     depends_on:
       - gateway
     restart: *restart

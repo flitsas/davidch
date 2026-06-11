@@ -22,19 +22,14 @@ export function AuthShell({
         <div className="absolute -right-24 top-1/4 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -left-16 bottom-1/4 h-48 w-48 rounded-full bg-flit-cyan/20 blur-2xl" />
         <div className="relative z-10">
-          <Link
-            href="/"
-            className="text-3xl font-bold tracking-tight text-flit-text-inverse"
-          >
+          <Link href="/" className="text-3xl font-bold tracking-tight text-flit-text-inverse">
             FLIT
           </Link>
           <p className="mt-4 max-w-xs text-pretty text-lg font-medium text-flit-text-inverse/90">
             Plataforma de gestión vehicular y trámites
           </p>
         </div>
-        <p className="relative z-10 text-sm text-flit-text-inverse/70">
-          Identidad y acceso seguro
-        </p>
+        <p className="relative z-10 text-sm text-flit-text-inverse/70">Identidad y acceso seguro</p>
       </aside>
 
       <main
@@ -48,12 +43,8 @@ export function AuthShell({
         </div>
         <div className="w-full max-w-md rounded-flit-xl border border-flit-border-soft bg-flit-bg-card p-8 shadow-flit-card">
           <header className="mb-8">
-            <h1 className="text-pretty text-2xl font-bold text-flit-text-brand">
-              {title}
-            </h1>
-            {subtitle && (
-              <p className="mt-2 text-sm text-flit-text-secondary">{subtitle}</p>
-            )}
+            <h1 className="text-pretty text-2xl font-bold text-flit-text-brand">{title}</h1>
+            {subtitle && <p className="mt-2 text-sm text-flit-text-secondary">{subtitle}</p>}
           </header>
           {children}
           {footer && <div className="mt-6 text-center text-sm">{footer}</div>}

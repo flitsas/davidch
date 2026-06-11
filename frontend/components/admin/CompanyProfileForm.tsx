@@ -35,15 +35,12 @@ export function CompanyProfileForm({ company }: { company: CompanyDetail }) {
       }
 
       if (status !== company.status) {
-        const statusRes = await fetch(
-          `/api/v1/admin/companies/${company.id}/status`,
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ status: companyStatusApiValue(status) }),
-          }
-        );
+        const statusRes = await fetch(`/api/v1/admin/companies/${company.id}/status`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ status: companyStatusApiValue(status) }),
+        });
 
         if (!statusRes.ok) {
           const data = await statusRes.json().catch(() => ({}));
@@ -78,9 +75,7 @@ export function CompanyProfileForm({ company }: { company: CompanyDetail }) {
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-flit-text-secondary">
-          Estado
-        </label>
+        <label className="mb-1 block text-sm font-medium text-flit-text-secondary">Estado</label>
         <select
           className="flit-focus-ring w-full max-w-xs rounded-flit-md border border-flit-border-soft bg-flit-bg-card px-3 py-2 text-sm text-flit-text-primary"
           value={status}

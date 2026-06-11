@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { UserSummary } from "@/lib/admin/types";
-import {
-  fetchCompanyConfig,
-  saveCompanyConfig,
-} from "@/lib/admin/companies-config-api";
+import { fetchCompanyConfig, saveCompanyConfig } from "@/lib/admin/companies-config-api";
 import { GradientButton } from "@/components/flit/Button";
 
 type TraspasoConfig = { onlyOwnVehicles: boolean };
@@ -44,15 +41,12 @@ export function TraspasosTab({ companyId }: { companyId: string }) {
   async function onAddExceptions() {
     if (selected.length === 0) return;
     setSaving(true);
-    const res = await fetch(
-      `/api/v1/admin/companies/${companyId}/exceptions/batch`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ user_ids: selected }),
-      }
-    );
+    const res = await fetch(`/api/v1/admin/companies/${companyId}/exceptions/batch`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ user_ids: selected }),
+    });
     setMessage(res.ok ? "Usuarios añadidos a lista blanca." : "Error en lista blanca.");
     setSelected([]);
     setSaving(false);
@@ -68,9 +62,7 @@ export function TraspasosTab({ companyId }: { companyId: string }) {
         <input
           type="checkbox"
           checked={config.onlyOwnVehicles}
-          onChange={(e) =>
-            setConfig({ ...config, onlyOwnVehicles: e.target.checked })
-          }
+          onChange={(e) => setConfig({ ...config, onlyOwnVehicles: e.target.checked })}
         />
         Solo vehículos propios de la compañía
       </label>
@@ -92,7 +84,7 @@ export function TraspasosTab({ companyId }: { companyId: string }) {
                   setSelected((prev) =>
                     prev.includes(user.id)
                       ? prev.filter((id) => id !== user.id)
-                      : [...prev, user.id]
+                      : [...prev, user.id],
                   )
                 }
               />

@@ -7,11 +7,7 @@ import { PageHeaderCard } from "@/components/flit/Card";
 import { FlitCard } from "@/components/flit/Card";
 import { FlitLink } from "@/components/flit/Link";
 
-export default async function RoleDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function RoleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSessionOrRedirect();
   if (!hasPermission(session, "roles:read")) redirect("/");

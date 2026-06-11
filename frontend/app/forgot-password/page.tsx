@@ -36,8 +36,7 @@ export default function ForgotPasswordPage() {
     >
       {sent ? (
         <AlertCard variant="success">
-          Si el correo existe en el sistema, recibirás un enlace para restablecer tu
-          contraseña.
+          Si el correo existe en el sistema, recibirás un enlace para restablecer tu contraseña.
         </AlertCard>
       ) : (
         <form onSubmit={onSubmit} className="space-y-6">

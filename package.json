@@ -1,0 +1,15 @@
+{
+  "name": "davidch",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "format:check": "pnpm -r --if-present format:check",
+    "format": "pnpm -r --if-present format",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "build": "pnpm -r --if-present build"
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2"
+  }
+}

@@ -22,7 +22,10 @@ export function AppShell({
     <div className="flex min-h-screen bg-flit-bg-app">
       <aside
         className="sticky top-0 flex h-screen w-[138px] shrink-0 flex-col items-center gap-6 py-8 flit-gradient-sidebar"
-        style={{ borderTopRightRadius: "var(--flit-radius-sidebar)", borderBottomRightRadius: "var(--flit-radius-sidebar)" }}
+        style={{
+          borderTopRightRadius: "var(--flit-radius-sidebar)",
+          borderBottomRightRadius: "var(--flit-radius-sidebar)",
+        }}
         aria-label="Navegación principal"
       >
         <Link
@@ -54,9 +57,7 @@ export function AppShell({
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex items-center justify-end gap-4 border-b border-flit-border-soft bg-flit-bg-card/80 px-6 py-4 backdrop-blur-sm">
-          <span className="hidden text-sm text-flit-text-secondary sm:inline">
-            Identidad
-          </span>
+          <span className="hidden text-sm text-flit-text-secondary sm:inline">Identidad</span>
           <span className="text-sm font-medium text-flit-text-primary">{email}</span>
           {headerActions}
         </header>

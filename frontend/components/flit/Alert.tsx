@@ -20,10 +20,7 @@ export function AlertCard({
     <p
       role="alert"
       aria-live="polite"
-      className={[
-        "rounded-flit-md border px-4 py-3 text-sm",
-        alertStyles[variant],
-      ].join(" ")}
+      className={["rounded-flit-md border px-4 py-3 text-sm", alertStyles[variant]].join(" ")}
     >
       {children}
     </p>

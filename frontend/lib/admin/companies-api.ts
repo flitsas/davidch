@@ -1,8 +1,6 @@
 import type { CompaniesIndexSearchParams } from "./companies-types";
 
-export function buildCompaniesIndexQuery(
-  params: CompaniesIndexSearchParams
-): string {
+export function buildCompaniesIndexQuery(params: CompaniesIndexSearchParams): string {
   const query = new URLSearchParams();
   const page = params.page ? Number(params.page) : 1;
   const pageSize = params.pageSize ? Number(params.pageSize) : 20;

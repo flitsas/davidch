@@ -24,9 +24,7 @@ export function InviteUserForm({
   const [loading, setLoading] = useState(false);
 
   function toggleRole(id: string) {
-    setRoleIds((prev) =>
-      prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id]
-    );
+    setRoleIds((prev) => (prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id]));
   }
 
   async function onSubmit(e: React.FormEvent) {

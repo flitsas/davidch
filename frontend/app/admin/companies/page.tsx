@@ -1,9 +1,6 @@
 import { apiFetch } from "@/lib/auth/api-client";
 import { buildCompaniesIndexQuery, companyStatusLabel } from "@/lib/admin/companies-api";
-import type {
-  CompaniesIndexSearchParams,
-  CompanyIndexResponse,
-} from "@/lib/admin/companies-types";
+import type { CompaniesIndexSearchParams, CompanyIndexResponse } from "@/lib/admin/companies-types";
 import { CompaniesIndexFilters } from "@/components/admin/CompaniesIndexFilters";
 import { CompaniesPagination } from "@/components/admin/CompaniesPagination";
 import Link from "next/link";
@@ -97,9 +94,7 @@ export default async function AdminCompaniesPage({
                         {company.nit}
                       </Link>
                     </td>
-                    <td className="px-6 py-4 text-flit-text-primary">
-                      {company.legalName}
-                    </td>
+                    <td className="px-6 py-4 text-flit-text-primary">{company.legalName}</td>
                     <td className="px-6 py-4">
                       <StatusChip
                         label={companyStatusLabel(company.status)}
@@ -113,9 +108,7 @@ export default async function AdminCompaniesPage({
                       {formatDate(company.updatedAt)}
                     </td>
                     <td className="px-6 py-4">
-                      <FlitLink href={`/admin/companies/${company.id}`}>
-                        Configurar
-                      </FlitLink>
+                      <FlitLink href={`/admin/companies/${company.id}`}>Configurar</FlitLink>
                     </td>
                   </tr>
                 ))}

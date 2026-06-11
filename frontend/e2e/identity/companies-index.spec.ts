@@ -20,10 +20,9 @@ test("tenant admin sees access denied on companies index", async ({ page }) => {
   await page.getByLabel("Correo").fill("admin@tenant-a.com");
   await page.getByLabel("Contraseña").fill("SecurePass!123");
   await Promise.all([
-    page.waitForResponse(
-      (res) => res.url().includes("/api/auth/login") && res.ok(),
-      { timeout: 15_000 }
-    ),
+    page.waitForResponse((res) => res.url().includes("/api/auth/login") && res.ok(), {
+      timeout: 15_000,
+    }),
     page.getByRole("button", { name: "Entrar" }).click(),
   ]);
   await page.waitForURL((url) => url.pathname === "/", { timeout: 15_000 });

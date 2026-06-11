@@ -1,0 +1,12 @@
+title = "davidch gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Ignore env templates and lockfiles"
+paths = [
+  '''(?i)\.env\.example$''',
+  '''pnpm-lock\.yaml$''',
+  '''package-lock\.json$''',
+]

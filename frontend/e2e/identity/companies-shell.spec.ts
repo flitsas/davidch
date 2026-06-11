@@ -23,7 +23,7 @@ test("super admin can create company and open tab shell", async ({ page }) => {
         res.url().includes("/api/v1/admin/companies") &&
         res.request().method() === "POST" &&
         res.ok(),
-      { timeout: 15_000 }
+      { timeout: 15_000 },
     ),
     page.getByRole("button", { name: "Crear compañía" }).click(),
   ]);
@@ -41,10 +41,9 @@ test("tenant admin sees access denied on company detail", async ({ page }) => {
   await page.getByLabel("Correo").fill("admin@tenant-a.com");
   await page.getByLabel("Contraseña").fill("SecurePass!123");
   await Promise.all([
-    page.waitForResponse(
-      (res) => res.url().includes("/api/auth/login") && res.ok(),
-      { timeout: 15_000 }
-    ),
+    page.waitForResponse((res) => res.url().includes("/api/auth/login") && res.ok(), {
+      timeout: 15_000,
+    }),
     page.getByRole("button", { name: "Entrar" }).click(),
   ]);
   await page.waitForURL((url) => url.pathname === "/", { timeout: 15_000 });

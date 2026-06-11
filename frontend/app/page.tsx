@@ -18,16 +18,9 @@ export default async function HomePage({
   const hasAdminNav = buildAdminNav(session).length > 1;
 
   return (
-    <AppShell
-      email={session.email}
-      nav={buildAdminNav(session)}
-      headerActions={<LogoutButton />}
-    >
+    <AppShell email={session.email} nav={buildAdminNav(session)} headerActions={<LogoutButton />}>
       {params.revoked === "1" && <SessionRevokedBanner />}
-      <PageHeaderCard
-        title="FLIT Identidad"
-        subtitle="Sesión activa y permisos cargados"
-      />
+      <PageHeaderCard title="FLIT Identidad" subtitle="Sesión activa y permisos cargados" />
       <FlitCard>
         <dl className="grid gap-4 sm:grid-cols-2">
           <div>
@@ -51,9 +44,7 @@ export default async function HomePage({
             </FlitLink>
           )}
           <Can permission="generar_consolidado" session={session}>
-            <GradientButton className="min-h-11 px-6 text-sm">
-              Generar consolidado
-            </GradientButton>
+            <GradientButton className="min-h-11 px-6 text-sm">Generar consolidado</GradientButton>
           </Can>
         </div>
       </FlitCard>

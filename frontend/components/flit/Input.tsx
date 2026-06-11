@@ -20,10 +20,7 @@ export function FlitInput({
 
   return (
     <div className="space-y-2">
-      <label
-        htmlFor={inputId}
-        className="block text-sm font-semibold text-flit-text-primary"
-      >
+      <label htmlFor={inputId} className="block text-sm font-semibold text-flit-text-primary">
         {label}
       </label>
       <div className="relative">
@@ -46,9 +43,7 @@ export function FlitInput({
             .filter(Boolean)
             .join(" ")}
           aria-invalid={error ? true : undefined}
-          aria-describedby={
-            error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined
-          }
+          aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
           {...props}
         />
       </div>
@@ -58,11 +53,7 @@ export function FlitInput({
         </p>
       )}
       {error && (
-        <p
-          id={`${inputId}-error`}
-          role="alert"
-          className="text-sm text-flit-danger"
-        >
+        <p id={`${inputId}-error`} role="alert" className="text-sm text-flit-danger">
           {error}
         </p>
       )}

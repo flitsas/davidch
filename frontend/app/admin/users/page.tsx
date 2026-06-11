@@ -22,8 +22,7 @@ export default async function AdminUsersPage() {
 
   const users: UserSummary[] = usersRes.ok ? await usersRes.json() : [];
   const roles: RoleSummary[] = rolesRes.ok ? await rolesRes.json() : [];
-  const tenants: TenantSummary[] =
-    tenantsRes?.ok ? await tenantsRes.json() : [];
+  const tenants: TenantSummary[] = tenantsRes?.ok ? await tenantsRes.json() : [];
 
   return (
     <>

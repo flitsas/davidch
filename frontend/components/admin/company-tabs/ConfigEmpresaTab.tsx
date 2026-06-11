@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  fetchCompanyConfig,
-  saveCompanyConfig,
-} from "@/lib/admin/companies-config-api";
+import { fetchCompanyConfig, saveCompanyConfig } from "@/lib/admin/companies-config-api";
 import { GradientButton } from "@/components/flit/Button";
 
 type SignatureConfig = {
@@ -32,7 +29,7 @@ export function ConfigEmpresaTab({ companyId }: { companyId: string }) {
           sellerSignatureType: 1,
           buyerSignatureType: 1,
           vaultEnabled: false,
-        }
+        },
       );
       setLoading(false);
     });
@@ -63,9 +60,7 @@ export function ConfigEmpresaTab({ companyId }: { companyId: string }) {
         <select
           className="w-full max-w-md rounded-flit-md border border-flit-border-soft px-3 py-2 text-sm"
           value={config.sellerSignatureType}
-          onChange={(e) =>
-            setConfig({ ...config, sellerSignatureType: Number(e.target.value) })
-          }
+          onChange={(e) => setConfig({ ...config, sellerSignatureType: Number(e.target.value) })}
         >
           {signatureOptions.map((o) => (
             <option key={o.value} value={o.value}>
@@ -79,9 +74,7 @@ export function ConfigEmpresaTab({ companyId }: { companyId: string }) {
         <select
           className="w-full max-w-md rounded-flit-md border border-flit-border-soft px-3 py-2 text-sm"
           value={config.buyerSignatureType}
-          onChange={(e) =>
-            setConfig({ ...config, buyerSignatureType: Number(e.target.value) })
-          }
+          onChange={(e) => setConfig({ ...config, buyerSignatureType: Number(e.target.value) })}
         >
           {signatureOptions.map((o) => (
             <option key={o.value} value={o.value}>

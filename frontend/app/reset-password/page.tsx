@@ -46,8 +46,7 @@ function ResetForm() {
     return (
       <AuthShell title="Enlace inválido">
         <AlertCard variant="danger">
-          El enlace de restablecimiento no es válido. Solicita uno nuevo desde recuperar
-          contraseña.
+          El enlace de restablecimiento no es válido. Solicita uno nuevo desde recuperar contraseña.
         </AlertCard>
         <p className="mt-6 text-center text-sm">
           <FlitLink href="/forgot-password">Solicitar nuevo enlace</FlitLink>

@@ -46,11 +46,7 @@ export type CompanyDetail = {
   tenant: CompanyTenantSummary;
 };
 
-export type CompanyTab =
-  | "matricula"
-  | "traspasos"
-  | "config-empresa"
-  | "contingencia";
+export type CompanyTab = "matricula" | "traspasos" | "config-empresa" | "contingencia";
 
 export const COMPANY_TABS: { id: CompanyTab; label: string }[] = [
   { id: "matricula", label: "Matrícula" },

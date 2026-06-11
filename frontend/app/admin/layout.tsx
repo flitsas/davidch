@@ -5,11 +5,7 @@ import { FlitLink } from "@/components/flit/Link";
 import { buildAdminNav } from "@/lib/flit/nav";
 import { getSessionOrRedirect, hasPermission } from "@/lib/auth/session";
 
-export default async function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getSessionOrRedirect();
 
   const canUsers = hasPermission(session, "users:read");
@@ -17,11 +13,7 @@ export default async function AdminLayout({
 
   if (!canUsers && !canRoles) {
     return (
-      <AppShell
-        email={session.email}
-        nav={buildAdminNav(session)}
-        headerActions={<LogoutButton />}
-      >
+      <AppShell email={session.email} nav={buildAdminNav(session)} headerActions={<LogoutButton />}>
         <FlitCard>
           <p className="text-flit-text-secondary">
             No tienes permisos para acceder a la administración.
@@ -35,11 +27,7 @@ export default async function AdminLayout({
   }
 
   return (
-    <AppShell
-      email={session.email}
-      nav={buildAdminNav(session)}
-      headerActions={<LogoutButton />}
-    >
+    <AppShell email={session.email} nav={buildAdminNav(session)} headerActions={<LogoutButton />}>
       {children}
     </AppShell>
   );

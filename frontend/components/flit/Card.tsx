@@ -33,12 +33,8 @@ export function PageHeaderCard({
   return (
     <FlitCard className="flex flex-wrap items-center justify-between gap-4">
       <div>
-        <h1 className="text-pretty text-2xl font-bold text-flit-text-brand">
-          {title}
-        </h1>
-        {subtitle && (
-          <p className="mt-1 text-sm text-flit-text-secondary">{subtitle}</p>
-        )}
+        <h1 className="text-pretty text-2xl font-bold text-flit-text-brand">{title}</h1>
+        {subtitle && <p className="mt-1 text-sm text-flit-text-secondary">{subtitle}</p>}
       </div>
       {actions}
     </FlitCard>

@@ -19,14 +19,11 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version-file: .nvmrc
           cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Backend audit
-        run: pnpm --filter @flit/backend audit --prod --audit-level high
 
       - name: Frontend audit
         run: pnpm --filter @flit/frontend audit --prod --audit-level high

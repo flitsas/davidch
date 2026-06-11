@@ -9,7 +9,7 @@ export async function fetchCompanyConfig<T>(companyId: string, path: string): Pr
 export async function saveCompanyConfig(
   companyId: string,
   path: string,
-  body: unknown
+  body: unknown,
 ): Promise<boolean> {
   const res = await fetch(`/api/v1/admin/companies/${companyId}/config/${path}`, {
     method: "PUT",

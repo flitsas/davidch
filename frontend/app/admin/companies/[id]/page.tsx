@@ -74,9 +74,7 @@ export default async function CompanyDetailPage({
       </p>
 
       <FlitCard className="mb-6">
-        <h2 className="mb-4 text-sm font-semibold text-flit-text-brand">
-          Datos generales
-        </h2>
+        <h2 className="mb-4 text-sm font-semibold text-flit-text-brand">Datos generales</h2>
         <CompanyProfileForm company={company} />
       </FlitCard>
 

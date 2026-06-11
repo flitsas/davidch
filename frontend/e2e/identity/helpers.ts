@@ -25,10 +25,9 @@ export async function loginAsAdmin(page: Page) {
   await page.getByLabel("Correo").fill(email);
   await page.getByLabel("Contraseña").fill(password);
   await Promise.all([
-    page.waitForResponse(
-      (res) => res.url().includes("/api/auth/login") && res.ok(),
-      { timeout: 15_000 }
-    ),
+    page.waitForResponse((res) => res.url().includes("/api/auth/login") && res.ok(), {
+      timeout: 15_000,
+    }),
     page.getByRole("button", { name: "Entrar" }).click(),
   ]);
   await page.waitForURL((url) => url.pathname === "/", { timeout: 15_000 });
@@ -39,17 +38,15 @@ export async function waitForMailhogToken(
   request: APIRequestContext,
   email: string,
   path: "/activate" | "/reset-password",
-  attempts = 12
+  attempts = 12,
 ): Promise<string | null> {
   const mailhog = process.env.MAILHOG_URL ?? "http://localhost:8025";
   const pattern =
-    path === "/activate"
-      ? /\/activate\?token=([^"\s&]+)/
-      : /\/reset-password\?token=([^"\s&]+)/;
+    path === "/activate" ? /\/activate\?token=([^"\s&]+)/ : /\/reset-password\?token=([^"\s&]+)/;
 
   for (let i = 0; i < attempts; i++) {
     const res = await request.get(
-      `${mailhog}/api/v2/search?kind=to&query=${encodeURIComponent(email)}`
+      `${mailhog}/api/v2/search?kind=to&query=${encodeURIComponent(email)}`,
     );
     if (res.ok()) {
       const data = await res.json();
@@ -64,7 +61,7 @@ export async function waitForMailhogToken(
 
 export async function fetchMailhogActivationLink(
   request: APIRequestContext,
-  email: string
+  email: string,
 ): Promise<string | null> {
   return waitForMailhogToken(request, email, "/activate");
 }

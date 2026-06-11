@@ -21,7 +21,7 @@ test("delete role with users shows migration UI", async ({ page }) => {
       (res) =>
         res.request().method() === "DELETE" &&
         res.url().includes("/api/roles/") &&
-        (res.status() === 409 || res.status() === 204)
+        (res.status() === 409 || res.status() === 204),
     ),
     page.getByRole("button", { name: /eliminar rol/i }).click(),
   ]);

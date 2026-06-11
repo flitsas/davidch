@@ -31,8 +31,7 @@ function LoginForm() {
         setError("Credenciales inválidas. Verifica tu correo y contraseña.");
         return;
       }
-      const target =
-        params.get("reason") === "session_revoked" ? "/?revoked=1" : "/";
+      const target = params.get("reason") === "session_revoked" ? "/?revoked=1" : "/";
       window.location.assign(target);
     } finally {
       setLoading(false);
@@ -43,9 +42,7 @@ function LoginForm() {
     <AuthShell
       title="Iniciar sesión"
       subtitle="Accede con tu correo corporativo"
-      footer={
-        <FlitLink href="/forgot-password">¿Olvidaste tu contraseña?</FlitLink>
-      }
+      footer={<FlitLink href="/forgot-password">¿Olvidaste tu contraseña?</FlitLink>}
     >
       {params.get("reason") === "session_revoked" && (
         <div className="mb-6">

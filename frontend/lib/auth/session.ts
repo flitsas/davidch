@@ -44,13 +44,7 @@ export async function getSessionOrRedirect(): Promise<MeResponse> {
   }
 }
 
-export function hasPermission(
-  session: MeResponse,
-  key: string,
-  scope: PermissionScope = "Tenant"
-) {
+export function hasPermission(session: MeResponse, key: string, scope: PermissionScope = "Tenant") {
   if (session.isSuperAdmin) return true;
-  return session.permissions.some(
-    (p) => p.key === key && normalizeScope(p.scope) === scope
-  );
+  return session.permissions.some((p) => p.key === key && normalizeScope(p.scope) === scope);
 }

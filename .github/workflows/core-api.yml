@@ -22,15 +22,15 @@ jobs:
 
       - name: Restore
         working-directory: services/core-api
-        run: dotnet restore
+        run: dotnet restore Flit.Identity.sln
 
       - name: Build
         working-directory: services/core-api
-        run: dotnet build --no-restore --configuration Release
+        run: dotnet build Flit.Identity.sln --no-restore --configuration Release
 
       - name: Test
         working-directory: services/core-api
-        run: dotnet test --no-build --configuration Release --logger "trx" --collect "XPlat Code Coverage"
+        run: dotnet test Flit.Identity.sln --no-build --configuration Release --logger "trx" --collect "XPlat Code Coverage"
 
       - name: Upload test results
         if: always()
@@ -56,4 +56,4 @@ jobs:
       # de motor PDF, volver a --self-contained con AOT.
       - name: Publish (linux-musl-x64, JIT)
         working-directory: services/core-api
-        run: dotnet publish src/Flit.Api/Flit.Api.csproj -c Release -r linux-musl-x64 --self-contained -o publish /p:PublishAot=false
+        run: dotnet publish src/Flit.Identity.Api/Flit.Identity.Api.csproj -c Release -r linux-musl-x64 --self-contained -o publish /p:PublishAot=false

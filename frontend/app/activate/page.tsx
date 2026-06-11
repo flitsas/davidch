@@ -47,8 +47,8 @@ function ActivateForm() {
     return (
       <AuthShell title="Enlace inválido">
         <AlertCard variant="danger">
-          El enlace de activación no es válido. Contacta al administrador para recibir
-          una nueva invitación.
+          El enlace de activación no es válido. Contacta al administrador para recibir una nueva
+          invitación.
         </AlertCard>
       </AuthShell>
     );

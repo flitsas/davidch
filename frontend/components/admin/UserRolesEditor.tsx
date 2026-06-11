@@ -25,9 +25,7 @@ export function UserRolesEditor({
   const [saving, setSaving] = useState(false);
 
   function toggle(id: string) {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id]
-    );
+    setSelected((prev) => (prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id]));
     setWarnings([]);
     setPending(false);
     setConfirm(false);

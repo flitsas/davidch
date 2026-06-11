@@ -1,6 +1,7 @@
 ## .NET build output
 bin/
 obj/
+TestResults/
 
 ## User-specific files
 *.user

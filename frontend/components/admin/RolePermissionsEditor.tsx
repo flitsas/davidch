@@ -83,9 +83,7 @@ export function RolePermissionsEditor({
       const body = await res.json();
       setAffectedUsers(body.affected_users ?? null);
       setShowMigrate(true);
-      setMessage(
-        `Rol con ${body.affected_users ?? "?"} usuarios. Selecciona un rol de reemplazo.`
-      );
+      setMessage(`Rol con ${body.affected_users ?? "?"} usuarios. Selecciona un rol de reemplazo.`);
       return;
     }
     if (!res.ok) {
@@ -127,9 +125,7 @@ export function RolePermissionsEditor({
         <table className="min-w-full text-sm">
           <thead className="bg-flit-bg-table-header">
             <tr>
-              <th className="px-4 py-3 text-left font-semibold text-flit-text-brand">
-                Permiso
-              </th>
+              <th className="px-4 py-3 text-left font-semibold text-flit-text-brand">Permiso</th>
               {SCOPES.map((s) => (
                 <th key={s} className="px-4 py-3 text-center font-semibold text-flit-text-brand">
                   {s}
@@ -170,11 +166,7 @@ export function RolePermissionsEditor({
         >
           {saving ? "Guardando…" : "Guardar permisos"}
         </GradientButton>
-        <DangerButton
-          type="button"
-          onClick={deleteRole}
-          className="min-h-10 px-6 text-sm"
-        >
+        <DangerButton type="button" onClick={deleteRole} className="min-h-10 px-6 text-sm">
           Eliminar rol
         </DangerButton>
       </div>
@@ -194,11 +186,7 @@ export function RolePermissionsEditor({
                 </option>
               ))}
             </select>
-            <FlitButton
-              variant="ghost"
-              onClick={migrate}
-              className="min-h-9 px-4 text-sm"
-            >
+            <FlitButton variant="ghost" onClick={migrate} className="min-h-9 px-4 text-sm">
               Migrar{affectedUsers ? ` (${affectedUsers} usuarios)` : ""}
             </FlitButton>
           </div>

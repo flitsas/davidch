@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  fetchCompanyConfig,
-  saveCompanyConfig,
-} from "@/lib/admin/companies-config-api";
+import { fetchCompanyConfig, saveCompanyConfig } from "@/lib/admin/companies-config-api";
 import { GradientButton } from "@/components/flit/Button";
 
 type MatriculaConfig = {
@@ -44,9 +41,7 @@ export function MatriculaTab({ companyId }: { companyId: string }) {
         <input
           type="checkbox"
           checked={config.allowNewVehicleFiling}
-          onChange={(e) =>
-            setConfig({ ...config, allowNewVehicleFiling: e.target.checked })
-          }
+          onChange={(e) => setConfig({ ...config, allowNewVehicleFiling: e.target.checked })}
         />
         Permitir radicación de vehículos nuevos
       </label>
@@ -54,9 +49,7 @@ export function MatriculaTab({ companyId }: { companyId: string }) {
         <input
           type="checkbox"
           checked={config.allowMiscProcedures}
-          onChange={(e) =>
-            setConfig({ ...config, allowMiscProcedures: e.target.checked })
-          }
+          onChange={(e) => setConfig({ ...config, allowMiscProcedures: e.target.checked })}
         />
         Permitir trámites misceláneos
       </label>
