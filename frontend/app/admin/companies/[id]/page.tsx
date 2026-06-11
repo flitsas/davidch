@@ -8,6 +8,7 @@ import { CompanyProfileForm } from "@/components/admin/CompanyProfileForm";
 import { MatriculaTab } from "@/components/admin/company-tabs/MatriculaTab";
 import { TraspasosTab } from "@/components/admin/company-tabs/TraspasosTab";
 import { ConfigEmpresaTab } from "@/components/admin/company-tabs/ConfigEmpresaTab";
+import { ContingenciaTab } from "@/components/admin/company-tabs/ContingenciaTab";
 import { PageHeaderCard } from "@/components/flit/Card";
 import { FlitCard } from "@/components/flit/Card";
 import { FlitLink } from "@/components/flit/Link";
@@ -22,11 +23,7 @@ function TabPanel({ companyId, tab }: { companyId: string; tab: CompanyTab }) {
     case "config-empresa":
       return <ConfigEmpresaTab companyId={companyId} />;
     case "contingencia":
-      return (
-        <p className="text-sm text-flit-text-secondary">
-          Contingencia — entrega posterior.
-        </p>
-      );
+      return <ContingenciaTab companyId={companyId} />;
   }
 }
 

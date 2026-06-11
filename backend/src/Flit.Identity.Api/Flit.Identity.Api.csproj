@@ -16,9 +16,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <ProjectReference Include="..\Flit.Companies.Infrastructure\Flit.Companies.Infrastructure.csproj" />
-    <ProjectReference Include="..\Flit.Companies.Admin\Flit.Companies.Admin.csproj" />
-    <ProjectReference Include="..\Flit.Companies.Runt\Flit.Companies.Runt.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
