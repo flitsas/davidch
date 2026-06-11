@@ -1,56 +1,53 @@
 import { test, expect } from "@playwright/test";
-import { isStackAvailable, loginAsAdmin } from "./helpers";
-
-const TENANT_ADMIN_EMAIL = process.env.E2E_TENANT_ADMIN_EMAIL ?? "admin@tenant-a.com";
-const TENANT_ADMIN_PASSWORD = process.env.E2E_TENANT_ADMIN_PASSWORD ?? "SecurePass!123";
+import {
+  dragHandleToHandle,
+  loginAsAdmin,
+  loginAsTenantAdmin,
+  resetMatriculaDocumentOrder,
+  skipIfStackUnavailable,
+} from "./helpers";
 
 test.beforeEach(async ({}, testInfo) => {
-  const base = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
-  if (!(await isStackAvailable(base))) {
-    testInfo.skip(true, "Stack not running — start docker compose");
-  }
+  await skipIfStackUnavailable(testInfo);
 });
 
-async function loginAsTenantAdmin(page: import("@playwright/test").Page) {
-  await page.goto("/login");
-  await page.getByLabel("Correo").fill(TENANT_ADMIN_EMAIL);
-  await page.getByLabel("Contraseña").fill(TENANT_ADMIN_PASSWORD);
-  await Promise.all([
-    page.waitForResponse((res) => res.url().includes("/api/auth/login") && res.ok(), {
-      timeout: 15_000,
-    }),
-    page.getByRole("button", { name: "Entrar" }).click(),
-  ]);
-  await page.waitForURL((url) => url.pathname === "/", { timeout: 15_000 });
-}
+test("tenant admin can reorder documents and persist after reload", async ({ page, request }) => {
+  test.setTimeout(90_000);
 
-test("tenant admin can reorder documents and persist after reload", async ({ page }) => {
+  await resetMatriculaDocumentOrder(request);
   await loginAsTenantAdmin(page);
   await page.goto("/ot/settings/documentos");
   await expect(page.getByRole("heading", { name: "Orden de documentos" })).toBeVisible();
   await expect(page.getByTestId("document-order-list")).toBeVisible();
+  await expect(page.getByTestId("doc-row-CEDULA").getByText("1", { exact: true })).toBeVisible();
 
-  const firstRow = page.getByTestId("doc-row-CEDULA");
-  const secondRow = page.getByTestId("doc-row-TARJETA_PROPIEDAD");
-  await expect(firstRow).toBeVisible();
-  await expect(secondRow).toBeVisible();
+  await expect(async () => {
+    await dragHandleToHandle(page, "doc-handle-TARJETA_PROPIEDAD", "doc-handle-CEDULA");
+    await expect(page.getByTestId("doc-row-TARJETA_PROPIEDAD").getByText("1", { exact: true })).toBeVisible({
+      timeout: 2_000,
+    });
+  }).toPass({ timeout: 15_000 });
 
-  await page.getByTestId("doc-handle-TARJETA_PROPIEDAD").dragTo(page.getByTestId("doc-handle-CEDULA"));
+  await page.waitForTimeout(500);
 
-  await Promise.all([
-    page.waitForResponse(
-      (res) =>
-        res.url().includes("/api/v1/ot/settings/document-order/MATRICULA_INICIAL") &&
-        res.request().method() === "PUT" &&
-        res.ok(),
-      { timeout: 15_000 },
-    ),
-    page.getByRole("button", { name: "Guardar orden de documentos" }).click(),
-  ]);
+  const saveResponse = page.waitForResponse(
+    (res) =>
+      res.url().includes("/api/v1/ot/settings/document-order/MATRICULA_INICIAL") &&
+      res.request().method() === "PUT",
+    { timeout: 15_000 },
+  );
+  await page.getByRole("button", { name: "Guardar orden de documentos" }).click();
+  const response = await saveResponse;
+  expect(response.ok(), `Save failed with HTTP ${response.status()}`).toBeTruthy();
+
+  const saved = (await response.json()) as {
+    items: { document_type_code: string; position: number }[];
+  };
+  expect(saved.items.find((item) => item.document_type_code === "TARJETA_PROPIEDAD")?.position).toBe(1);
 
   await page.reload();
-  await expect(page.getByTestId("doc-row-TARJETA_PROPIEDAD").locator("span").first()).toHaveText("1");
-  await expect(page.getByTestId("doc-row-CEDULA").locator("span").first()).toHaveText("2");
+  await expect(page.getByTestId("doc-row-TARJETA_PROPIEDAD").getByText("1", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("doc-row-CEDULA").getByText("2", { exact: true })).toBeVisible();
 });
 
 test("super admin can open document order tab", async ({ page }) => {

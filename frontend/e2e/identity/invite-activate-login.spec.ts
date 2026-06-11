@@ -1,11 +1,8 @@
 import { test, expect } from "@playwright/test";
-import { isStackAvailable, loginAsAdmin, waitForMailhogToken } from "./helpers";
+import { loginAsAdmin, skipIfStackUnavailable, waitForMailhogToken } from "./helpers";
 
 test.beforeEach(async ({}, testInfo) => {
-  const base = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
-  if (!(await isStackAvailable(base))) {
-    testInfo.skip(true, "Stack not running — start docker compose");
-  }
+  await skipIfStackUnavailable(testInfo);
 });
 
 test("invite activate login flow", async ({ page, request }) => {

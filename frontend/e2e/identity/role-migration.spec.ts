@@ -1,11 +1,8 @@
 import { test, expect } from "@playwright/test";
-import { isStackAvailable, loginAsAdmin } from "./helpers";
+import { loginAsAdmin, skipIfStackUnavailable } from "./helpers";
 
 test.beforeEach(async ({}, testInfo) => {
-  const base = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
-  if (!(await isStackAvailable(base))) {
-    testInfo.skip(true, "Stack not running");
-  }
+  await skipIfStackUnavailable(testInfo);
 });
 
 test("delete role with users shows migration UI", async ({ page }) => {
