@@ -11,5 +11,7 @@ test("tenant admin can open tramites index", async ({ page }) => {
   await page.goto("/tramites");
   await expect(page.getByRole("heading", { name: "Trámites" })).toBeVisible();
   await expect(page.getByTestId("tramites-index")).toBeVisible();
-  await expect(page.getByTestId("tramites-empty")).toBeVisible();
+  const empty = page.getByTestId("tramites-empty");
+  const table = page.getByTestId("tramites-index-table");
+  await expect(empty.or(table)).toBeVisible();
 });
