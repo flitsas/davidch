@@ -13,6 +13,7 @@ using Flit.Procedures.Admin.Endpoints;
 using Flit.Procedures.Admin.Index;
 using Flit.Procedures.Admin.Services;
 using Flit.Procedures.Runtime.Create;
+using Flit.Procedures.Runtime.Dashboard;
 using Flit.Procedures.Runtime.Documents;
 using Flit.Procedures.Runtime.Endpoints;
 using Flit.Procedures.Runtime.Index;
@@ -88,6 +89,10 @@ builder.Services.AddScoped<ProcedureTypeWriter>();
 builder.Services.AddScoped<TramitesIndexHandler>();
 builder.Services.AddScoped<TramitesCreateHandler>();
 builder.Services.AddScoped<TramitesDocumentUploadHandler>();
+builder.Services.AddScoped<TramitesDashboardSummaryHandler>();
+builder.Services.AddScoped<TramitesDashboardDetailHandler>();
+builder.Services.AddScoped<TramitesDashboardUsersHandler>();
+builder.Services.AddScoped<TramitesDashboardExportHandler>();
 builder.Services.AddSingleton(_ =>
 {
     var basePath = builder.Configuration["Procedures:DocumentStoragePath"]

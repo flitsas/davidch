@@ -22,6 +22,7 @@
     <ProjectReference Include="..\..\src\Flit.Identity.Auth\Flit.Identity.Auth.csproj" />
     <ProjectReference Include="..\..\src\Flit.Identity.Rbac\Flit.Identity.Rbac.csproj" />
     <ProjectReference Include="..\..\src\Flit.Identity.Users\Flit.Identity.Users.csproj" />
+    <ProjectReference Include="..\..\src\Flit.Procedures.Runtime\Flit.Procedures.Runtime.csproj" />
   </ItemGroup>
 
 </Project>
