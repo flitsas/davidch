@@ -74,6 +74,10 @@ internal static class TramitesDashboardTestHelper
                     legalRepresentative = (object?)null,
                 },
             },
+            documents = new[]
+            {
+                new { label = "Escritura", fileName = "escritura.pdf", fileSizeBytes = 1024L },
+            },
         });
         response.EnsureSuccessStatusCode();
     }

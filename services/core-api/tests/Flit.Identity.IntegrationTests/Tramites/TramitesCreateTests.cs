@@ -52,6 +52,10 @@ public class TramitesCreateTests : IClassFixture<IdentityWebApplicationFactory>
                     legalRepresentative = (object?)null,
                 },
             },
+            documents = new[]
+            {
+                new { label = "Escritura", fileName = "escritura.pdf", fileSizeBytes = 1024L },
+            },
         });
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
@@ -93,6 +97,10 @@ public class TramitesCreateTests : IClassFixture<IdentityWebApplicationFactory>
                         documentNumber = "1111111111",
                     },
                 },
+            },
+            documents = new[]
+            {
+                new { label = "Escritura", fileName = "escritura.pdf", fileSizeBytes = 1024L },
             },
         });
 

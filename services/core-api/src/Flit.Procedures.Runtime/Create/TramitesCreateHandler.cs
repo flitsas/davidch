@@ -7,13 +7,15 @@ using Flit.Procedures.Shared;
 using Flit.Procedures.Shared.Domain;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace Flit.Procedures.Runtime.Create;
 
 public sealed class TramitesCreateHandler(
     ProceduresDbContext db,
     IProcedureDefinitionService definitions,
-    TrafficAuthorityPicker trafficAuthorityPicker)
+    TrafficAuthorityPicker trafficAuthorityPicker,
+    IConfiguration configuration)
 {
     public async Task<IResult> HandleAsync(
         CreateTramiteRequest request,
@@ -48,6 +50,13 @@ public sealed class TramitesCreateHandler(
         if (actorValidation is not null)
         {
             return actorValidation;
+        }
+
+        var maxDocumentSizeBytes = configuration.GetValue("Procedures:MaxDocumentSizeBytes", 10 * 1024 * 1024);
+        var documentValidation = ValidateDocuments(request.Documents, definition, maxDocumentSizeBytes);
+        if (documentValidation is not null)
+        {
+            return documentValidation;
         }
 
         var now = DateTimeOffset.UtcNow;
@@ -97,6 +106,29 @@ public sealed class TramitesCreateHandler(
                     ParentActorId = actor.Id,
                 });
             }
+        }
+
+        var staticDocuments = definition.Documents
+            .Where(d => d.Kind == DocumentKind.Static)
+            .ToList();
+        var providedDocuments = request.Documents ?? Array.Empty<CreateTramiteDocumentRequest>();
+
+        foreach (var docDef in staticDocuments)
+        {
+            var docRequest = providedDocuments.Single(d =>
+                string.Equals(d.Label.Trim(), docDef.Label, StringComparison.Ordinal));
+
+            instance.Documents.Add(new ProcedureInstanceDocument
+            {
+                Id = Guid.NewGuid(),
+                ProcedureInstanceId = instance.Id,
+                Label = docDef.Label,
+                Kind = DocumentKind.Static,
+                FileName = Path.GetFileName(docRequest.FileName.Trim()),
+                FileSizeBytes = docRequest.FileSizeBytes,
+                StoragePath = "",
+                UploadedAt = now,
+            });
         }
 
         db.ProcedureInstances.Add(instance);
@@ -168,6 +200,61 @@ public sealed class TramitesCreateHandler(
             else if (actual.LegalRepresentative is not null)
             {
                 return ValidationError("Legal representative is only allowed for juridical actors.");
+            }
+        }
+
+        return null;
+    }
+
+    private static IResult? ValidateDocuments(
+        IReadOnlyList<CreateTramiteDocumentRequest>? documents,
+        ProcedureDefinitionDto definition,
+        long maxDocumentSizeBytes)
+    {
+        var requiredLabels = definition.Documents
+            .Where(d => d.Kind == DocumentKind.Static)
+            .Select(d => d.Label)
+            .ToList();
+
+        var provided = documents ?? Array.Empty<CreateTramiteDocumentRequest>();
+
+        if (requiredLabels.Count == 0)
+        {
+            return provided.Count > 0
+                ? ValidationError("Document count does not match procedure definition.")
+                : null;
+        }
+
+        if (provided.Count != requiredLabels.Count)
+        {
+            return ValidationError("Document count does not match procedure definition.");
+        }
+
+        foreach (var required in requiredLabels)
+        {
+            if (!provided.Any(d => string.Equals(d.Label.Trim(), required, StringComparison.Ordinal)))
+            {
+                return ValidationError($"Falta el documento requerido: {required}.");
+            }
+        }
+
+        foreach (var doc in provided)
+        {
+            if (!requiredLabels.Any(label =>
+                    string.Equals(label, doc.Label.Trim(), StringComparison.Ordinal)))
+            {
+                return ValidationError("Document label is not a static document in this procedure type.");
+            }
+
+            if (string.IsNullOrWhiteSpace(doc.FileName)
+                || !doc.FileName.Trim().EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+            {
+                return ValidationError("fileName must be a PDF file name.");
+            }
+
+            if (doc.FileSizeBytes <= 0 || doc.FileSizeBytes > maxDocumentSizeBytes)
+            {
+                return ValidationError("fileSizeBytes exceeds maximum allowed (10 MB).");
             }
         }
 

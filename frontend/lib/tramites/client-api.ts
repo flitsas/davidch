@@ -57,11 +57,14 @@ export async function lookupSimit(documentType: string, documentNumber: string) 
   return parseJson<unknown>(res);
 }
 
+export const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024;
+
 export async function createTramite(payload: {
   procedureTypeId: string;
   otDivipolCode: string;
   vehicleQueryValue: string;
   actors: ActorFormState[];
+  documents: DocumentFileState[];
 }) {
   const res = await fetch("/api/v1/tramites", {
     method: "POST",
@@ -79,11 +82,19 @@ export async function createTramite(payload: {
         documentNumber: actor.documentNumber,
         legalRepresentative: actor.legalRepresentative ?? null,
       })),
+      documents: payload.documents
+        .filter((doc) => doc.file)
+        .map((doc) => ({
+          label: doc.label,
+          fileName: doc.file!.name,
+          fileSizeBytes: doc.file!.size,
+        })),
     }),
   });
   return parseJson<{ id: string; status: string }>(res);
 }
 
+// Reserved for future binary upload when file storage is enabled.
 export async function uploadTramiteDocument(instanceId: string, label: string, file: File) {
   const form = new FormData();
   form.append("file", file);

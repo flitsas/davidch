@@ -7,7 +7,13 @@ public sealed record CreateTramiteRequest(
     Guid ProcedureTypeId,
     string OtDivipolCode,
     string VehicleQueryValue,
-    IReadOnlyList<CreateTramiteActorRequest> Actors);
+    IReadOnlyList<CreateTramiteActorRequest> Actors,
+    IReadOnlyList<CreateTramiteDocumentRequest>? Documents);
+
+public sealed record CreateTramiteDocumentRequest(
+    string Label,
+    string FileName,
+    long FileSizeBytes);
 
 public sealed record CreateTramiteActorRequest(
     string RoleLabel,

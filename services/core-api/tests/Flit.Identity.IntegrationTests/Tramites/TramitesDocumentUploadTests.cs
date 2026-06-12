@@ -99,6 +99,10 @@ public class TramitesDocumentUploadTests : IClassFixture<IdentityWebApplicationF
                     legalRepresentative = (object?)null,
                 },
             },
+            documents = new[]
+            {
+                new { label = "Escritura", fileName = "escritura.pdf", fileSizeBytes = 1024L },
+            },
         });
         response.EnsureSuccessStatusCode();
         var created = await response.Content.ReadFromJsonAsync<TramiteCreatedResponse>();

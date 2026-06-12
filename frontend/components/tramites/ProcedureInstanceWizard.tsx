@@ -13,9 +13,9 @@ import {
   isVinMode,
   lookupRues,
   lookupSimit,
+  MAX_DOCUMENT_BYTES,
   queryRunt,
   staticDocuments,
-  uploadTramiteDocument,
 } from "@/lib/tramites/client-api";
 import type {
   ActorFormState,
@@ -138,6 +138,9 @@ export function ProcedureInstanceWizard({ onClose, onSuccess }: Props) {
       for (const doc of documents) {
         if (!doc.file) return `Adjunte el PDF para ${doc.label}.`;
         if (!isPdfFile(doc.file)) return `Solo se permiten archivos PDF (${doc.label}).`;
+        if (doc.file.size > MAX_DOCUMENT_BYTES) {
+          return `El archivo ${doc.label} supera el máximo de 10 MB.`;
+        }
       }
     }
     return null;
@@ -219,18 +222,13 @@ export function ProcedureInstanceWizard({ onClose, onSuccess }: Props) {
     setSubmitting(true);
     setError(null);
     try {
-      const created = await createTramite({
+      await createTramite({
         procedureTypeId: selectedTypeId,
         otDivipolCode,
         vehicleQueryValue: vehicleQueryValue.trim(),
         actors,
+        documents,
       });
-
-      for (const doc of documents) {
-        if (doc.file) {
-          await uploadTramiteDocument(created.id, doc.label, doc.file);
-        }
-      }
 
       onSuccess();
     } catch (e) {
