@@ -5,9 +5,7 @@ export default function EditProcedureTypePlaceholderPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  return (
-    <FlitCardWrapper params={params} />
-  );
+  return <FlitCardWrapper params={params} />;
 }
 
 async function FlitCardWrapper({ params }: { params: Promise<{ id: string }> }) {
