@@ -4,7 +4,7 @@
 **Status:** Approved  
 **ADO Feature:** [#9555](https://dev.azure.com/FlitDevOps/9032fb34-d178-4c62-b1f5-6805b56524b1/_workitems/edit/9555)  
 **ADO User Stories:** [#10002](https://dev.azure.com/FlitDevOps/_workitems/edit/10002)–[#10005](https://dev.azure.com/FlitDevOps/_workitems/edit/10005)  
-**Runtime consumer:** [#9733](https://dev.azure.com/FlitDevOps/_workitems/edit/9733)  
+**Runtime consumer:** [#9733](https://dev.azure.com/FlitDevOps/_workitems/edit/9733) — see [runtime MVP spec](./2026-06-12-tramites-runtime-mvp-design.md)  
 **Depends on:** Identity (#9548), Admin OT (#9558)
 
 ## Summary
