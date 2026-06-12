@@ -90,7 +90,7 @@ services:
     environment:
       API_BASE_URL: http://gateway:8080
     ports:
-      - "127.0.0.1:${FRONTEND_PORT:-40102}:80"
+      - "127.0.0.1:${FRONTEND_PORT:-40102}:3000"
     depends_on:
       gateway:
         condition: service_healthy
