@@ -1,25 +1,32 @@
-import Link from "next/link";
+import { apiFetch } from "@/lib/auth/api-client";
+import type { ProcedureTypeDetail } from "@/lib/admin/procedure-types-types";
+import { PageHeaderCard } from "@/components/flit/Card";
+import { ProcedureTypeWizard } from "@/components/admin/ProcedureTypeWizard";
+import { FlitLink } from "@/components/flit/Link";
 
-export default function EditProcedureTypePlaceholderPage({
+export default async function EditProcedureTypePage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  return <FlitCardWrapper params={params} />;
-}
-
-async function FlitCardWrapper({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const res = await apiFetch(`/api/v1/admin/procedure-types/${id}`);
+
+  if (!res.ok) {
+    return (
+      <>
+        <PageHeaderCard title="Tipo de trámite no encontrado" />
+        <FlitLink href="/admin/procedure-types">Volver al listado</FlitLink>
+      </>
+    );
+  }
+
+  const detail = (await res.json()) as ProcedureTypeDetail;
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-semibold text-flit-text-brand">Editar tipo de trámite</h1>
-      <p className="text-sm text-flit-text-secondary">
-        Wizard de edición (ID: {id}) — disponible en la historia #10005.
-      </p>
-      <Link href="/admin/procedure-types" className="text-flit-blue hover:underline">
-        Volver al listado
-      </Link>
-    </div>
+    <>
+      <PageHeaderCard title={`Editar: ${detail.name}`} subtitle={`Código ${detail.code}`} />
+      <ProcedureTypeWizard mode="edit" procedureTypeId={id} initial={detail} />
+    </>
   );
 }
