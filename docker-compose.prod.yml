@@ -52,9 +52,9 @@ services:
       Verifik__BaseUrl: ${VERIFIK_BASE_URL:-https://api.verifik.co}
       Verifik__TimeoutSeconds: ${VERIFIK_TIMEOUT_SECONDS:-30}
     ports:
-      - "127.0.0.1:${CORE_API_PORT:-40302}:80"
+      - "127.0.0.1:${CORE_API_PORT:-40302}:8081"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8081/api/health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -89,7 +89,7 @@ services:
     environment:
       API_BASE_URL: http://gateway:8080
     ports:
-      - "127.0.0.1:${FRONTEND_PORT:-40102}:3000"
+      - "127.0.0.1:${FRONTEND_PORT:-40102}:80"
     depends_on:
       gateway:
         condition: service_healthy
