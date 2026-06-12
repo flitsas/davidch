@@ -10,13 +10,13 @@
 
 **Spec:** `docs/superpowers/specs/2026-06-12-tramites-dashboard-mvp-design.md`
 
-**ADO Feature:** [#9723](https://dev.azure.com/FlitDevOps/9032fb34-d178-4c62-b1f5-6805b56524b1/_workitems/edit/9723) (New)
+**ADO Feature:** [#9723](https://dev.azure.com/FlitDevOps/9032fb34-d178-4c62-b1f5-6805b56524b1/_workitems/edit/9723) (Active)
 
-| Story | ADO (proposed) | Title | Branch |
-|-------|----------------|-------|--------|
-| HU-1 | TBD | API dashboard (summary, detail, users, export) | `feature/HU-TBD-DCHICA-api-tramites-dashboard` |
-| HU-2 | TBD | FE dashboard (chart, table, cards, export) | `feature/HU-TBD-DCHICA-fe-tramites-dashboard` |
-| HU-3 | TBD | E2E dashboard | `feature/HU-TBD-DCHICA-e2e-tramites-dashboard` |
+| Story | ADO | Title | Branch |
+|-------|-----|-------|--------|
+| HU-1 | #10084 | API dashboard (summary, detail, users, export) | `feature/HU10084-DCHICA-api-tramites-dashboard` |
+| HU-2 | #10085 | FE dashboard (chart, table, cards, export) | `feature/HU10085-DCHICA-fe-tramites-dashboard` |
+| HU-3 | #10086 | E2E dashboard | `feature/HU10086-DCHICA-e2e-tramites-dashboard` |
 
 **Dependency:** #9733 merged on `develop` (verified). **Order:** HU-1 → HU-2 → HU-3. Stop for review between HUs.
 
@@ -77,9 +77,9 @@
 
 ---
 
-## HU-1: API dashboard (HU-TBD)
+## HU-1: API dashboard (#10084)
 
-**Branch:** `feature/HU-TBD-DCHICA-api-tramites-dashboard`
+**Branch:** `feature/HU10084-DCHICA-api-tramites-dashboard`
 
 ### Task 1: Project deps + shared dashboard primitives
 
@@ -629,9 +629,9 @@ git commit -m "feat(tramites): dashboard users stats and Excel export API"
 
 ---
 
-## HU-2: FE dashboard (HU-TBD)
+## HU-2: FE dashboard (#10085)
 
-**Branch:** `feature/HU-TBD-DCHICA-fe-tramites-dashboard`
+**Branch:** `feature/HU10085-DCHICA-fe-tramites-dashboard`
 
 **Depends on:** HU-1 merged.
 
@@ -782,9 +782,9 @@ git commit -m "feat(tramites): dashboard Excel export download"
 
 ---
 
-## HU-3: E2E dashboard (HU-TBD)
+## HU-3: E2E dashboard (#10086)
 
-**Branch:** `feature/HU-TBD-DCHICA-e2e-tramites-dashboard`
+**Branch:** `feature/HU10086-DCHICA-e2e-tramites-dashboard`
 
 **Depends on:** HU-2 merged.
 

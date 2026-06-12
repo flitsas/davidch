@@ -3,7 +3,7 @@
 **Date:** 2026-06-12  
 **Status:** Approved  
 **ADO Feature:** [#9723](https://dev.azure.com/FlitDevOps/9032fb34-d178-4c62-b1f5-6805b56524b1/_workitems/edit/9723) — [DASHBOARD-TRÁMITES] Dashboard de Trámites Operativos  
-**ADO User Stories:** TBD (HU-1–HU-3 below)  
+**ADO User Stories:** [#10084](https://dev.azure.com/FlitDevOps/_workitems/edit/10084)–[#10086](https://dev.azure.com/FlitDevOps/_workitems/edit/10086) (HU-1..HU-3 MVP)  
 **Project:** FLIT 2.0 — FLIT EVOLUTION  
 **Depends on:** Identity (#9548), Admin Compañías (#9551), Trámites Runtime (#9733)
 
@@ -319,21 +319,15 @@ Seed: create instances with `MATRICULA_INICIAL`, `TRASPASO`, `RADICADO_CUENTA` c
 
 ---
 
-## 6. User stories (proposed for ADO)
+## 6. User stories (ADO)
 
-| HU | Title | Scope |
-|----|-------|-------|
-| HU-1 | API dashboard trámites | Summary, detail, users, export endpoints + integration tests |
-| HU-2 | FE dashboard trámites | Page, chart, lateral table, cards, multiselect, Excel download |
-| HU-3 | E2E dashboard trámites | Playwright happy path |
+| HU | ADO | Title | Branch |
+|----|-----|-------|--------|
+| HU-1 | #10084 | API dashboard trámites | `feature/HU10084-DCHICA-api-tramites-dashboard` |
+| HU-2 | #10085 | FE dashboard trámites | `feature/HU10085-DCHICA-fe-tramites-dashboard` |
+| HU-3 | #10086 | E2E dashboard trámites | `feature/HU10086-DCHICA-e2e-tramites-dashboard` |
 
-**Dependency order:** #9733 HU-1 (schema) + HU-2 (create API) must be merged before HU-1 here. HU-2 (FE dashboard) depends on HU-1 (API dashboard).
-
-**Suggested branches:**
-
-- `feature/HU{ID}-DCHICA-api-tramites-dashboard`
-- `feature/HU{ID}-DCHICA-fe-tramites-dashboard`
-- `feature/HU{ID}-DCHICA-e2e-tramites-dashboard`
+**Dependency order:** #9733 merged on `develop`. HU-1 → HU-2 → HU-3. Pause for review between HUs per `flit-hu-story-git-workflow`.
 
 ---
 
