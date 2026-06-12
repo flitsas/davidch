@@ -1,9 +1,8 @@
-import { Can } from "@/components/auth/Can";
+import { TramitesPageActions } from "@/components/tramites/TramitesPageActions";
 import { TramitesIndexTable } from "@/components/tramites/TramitesIndexTable";
 import { PageHeaderCard, FlitCard } from "@/components/flit/Card";
-import { GradientButton } from "@/components/flit/Button";
 import { apiFetch } from "@/lib/auth/api-client";
-import { getSessionOrRedirect } from "@/lib/auth/session";
+import { getSessionOrRedirect, hasPermission } from "@/lib/auth/session";
 import { buildTramitesIndexQuery } from "@/lib/tramites/api";
 import type { TramitesIndexResponse, TramitesIndexSearchParams } from "@/lib/tramites/types";
 
@@ -13,6 +12,7 @@ export default async function TramitesPage({
   searchParams: Promise<TramitesIndexSearchParams>;
 }) {
   const session = await getSessionOrRedirect();
+  const canCreate = hasPermission(session, "tramites:create");
   const params = await searchParams;
   const query = buildTramitesIndexQuery(params);
   const res = await apiFetch(`/api/v1/tramites/index?${query}`);
@@ -26,18 +26,7 @@ export default async function TramitesPage({
       <PageHeaderCard
         title="Trámites"
         subtitle="Instancias de trámite del tenant — más recientes primero"
-        actions={
-          <Can permission="tramites:create" session={session}>
-            <GradientButton
-              type="button"
-              className="min-h-11 px-6 text-sm"
-              data-testid="tramites-new"
-              disabled
-            >
-              Nuevo trámite
-            </GradientButton>
-          </Can>
-        }
+        actions={<TramitesPageActions canCreate={canCreate} />}
       />
 
       <FlitCard className="overflow-hidden p-0" data-testid="tramites-index">
@@ -47,7 +36,9 @@ export default async function TramitesPage({
 
         {!res.ok && (
           <p className="px-6 py-8 text-sm text-flit-danger" role="alert">
-            No se pudo cargar el listado de trámites.
+            {session.isSuperAdmin && !session.tenantId
+              ? "Los trámites requieren contexto de compañía. Inicie sesión como administrador de tenant (p. ej. admin@tenant-a.com)."
+              : "No se pudo cargar el listado de trámites."}
           </p>
         )}
 

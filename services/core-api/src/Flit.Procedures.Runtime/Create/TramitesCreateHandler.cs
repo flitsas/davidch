@@ -22,7 +22,8 @@ public sealed class TramitesCreateHandler(
     {
         if (user.TenantId is not { } tenantId)
         {
-            return Forbidden();
+            return Forbidden(
+                "Los trámites requieren un usuario con tenant asignado. Inicie sesión como administrador de compañía.");
         }
 
         var validation = ValidateRequest(request);
@@ -176,8 +177,10 @@ public sealed class TramitesCreateHandler(
     private static IResult NotFound(string message) =>
         Results.Json(new { code = ApiErrorCodes.NotFound, message }, statusCode: StatusCodes.Status404NotFound);
 
-    private static IResult Forbidden() =>
-        Results.Json(new { code = ApiErrorCodes.Forbidden }, statusCode: StatusCodes.Status403Forbidden);
+    private static IResult Forbidden(string? message = null) =>
+        Results.Json(
+            new { code = ApiErrorCodes.Forbidden, message },
+            statusCode: StatusCodes.Status403Forbidden);
 
     private static IResult ValidationError(string message) =>
         Results.Json(new { code = ApiErrorCodes.ValidationError, message }, statusCode: StatusCodes.Status400BadRequest);

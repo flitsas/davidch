@@ -52,6 +52,8 @@ services:
       - "host.docker.internal:host-gateway"
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENV:-Development}
+      # Gateway YARP (appsettings.Docker.json) enruta a http://core-api:8081
+      ASPNETCORE_URLS: http://+:8081
       ConnectionStrings__Identity: Host=postgres;Port=5432;Database=${POSTGRES_DB:-dev_db_davidch};Username=${POSTGRES_USER:-user_davidch};Password=${POSTGRES_PASSWORD:-changeme};SSL Mode=Disable
       Cors__AllowedOrigins: ${CORS_ORIGIN:-https://dev.davidch.flitsas.online}
       Jwt__DevGenerate: "true"
@@ -69,12 +71,12 @@ services:
     volumes:
       - flit_procedure_docs:/data/procedure-docs
     ports:
-      - "127.0.0.1:${CORE_API_PORT:-40302}:80"
+      - "127.0.0.1:${CORE_API_PORT:-40302}:8081"
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8081/api/health"]
       interval: 30s
       timeout: 5s
       retries: 3

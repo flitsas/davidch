@@ -22,6 +22,7 @@ public static class TramitesEndpoints
 
         var createGroup = app.MapGroup("/api/v1/tramites").RequireTramitesCreate();
         createGroup.MapGet("/procedure-types", ListProcedureTypesAsync);
+        createGroup.MapGet("/procedure-types/{id:guid}", GetProcedureTypeByIdAsync);
         createGroup.MapGet("/traffic-authorities", ListTrafficAuthoritiesAsync);
         createGroup.MapGet("/lookups/rues", LookupRuesAsync);
         createGroup.MapGet("/lookups/simit", LookupSimitAsync);
@@ -49,6 +50,17 @@ public static class TramitesEndpoints
         return Results.Ok(items);
     }
 
+    private static async Task<IResult> GetProcedureTypeByIdAsync(
+        Guid id,
+        IProcedureDefinitionService definitions,
+        CancellationToken ct)
+    {
+        var definition = await definitions.GetByIdAsync(id, ct);
+        return definition is null
+            ? Results.Json(new { code = "NOT_FOUND" }, statusCode: StatusCodes.Status404NotFound)
+            : Results.Ok(definition);
+    }
+
     private static async Task<IResult> ListTrafficAuthoritiesAsync(
         HttpContext http,
         TrafficAuthorityPicker picker,
@@ -57,7 +69,7 @@ public static class TramitesEndpoints
         var user = (CurrentUser)http.Items["CurrentUser"]!;
         if (user.TenantId is not { } tenantId)
         {
-            return Results.Json(new { code = "FORBIDDEN" }, statusCode: StatusCodes.Status403Forbidden);
+            return TenantContextRequired();
         }
 
         var items = await picker.ListForTenantAsync(tenantId, ct);
@@ -114,4 +126,13 @@ public static class TramitesEndpoints
 
     private static IResult ValidationError(string message) =>
         Results.Json(new { code = "VALIDATION_ERROR", message }, statusCode: StatusCodes.Status400BadRequest);
+
+    private static IResult TenantContextRequired() =>
+        Results.Json(
+            new
+            {
+                code = "FORBIDDEN",
+                message = "Los trámites requieren un usuario con tenant asignado. Inicie sesión como administrador de compañía.",
+            },
+            statusCode: StatusCodes.Status403Forbidden);
 }

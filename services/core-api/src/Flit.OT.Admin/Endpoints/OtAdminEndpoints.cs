@@ -1,3 +1,4 @@
+using Flit.Companies.Infrastructure.Persistence;
 using Flit.Identity.Rbac;
 using Flit.Identity.Shared.Auth;
 using Flit.OT.Admin.Auth;
@@ -7,6 +8,7 @@ using Flit.OT.Admin.Index;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.EntityFrameworkCore;
 
 namespace Flit.OT.Admin.Endpoints;
 
@@ -18,6 +20,7 @@ public static class OtAdminEndpoints
             .RequireSuperAdmin();
 
         group.MapGet("/index", GetIndexAsync);
+        group.MapGet("/traffic-authority-catalog", ListTrafficAuthorityCatalogAsync);
         group.MapPost("/", CreateOtAsync);
         group.MapGet("/{id:guid}", GetOtAsync);
         group.MapPatch("/{id:guid}", UpdateOtAsync);
@@ -63,6 +66,19 @@ public static class OtAdminEndpoints
         OtIntegrationHandler handler,
         CancellationToken ct) =>
         handler.PutForProfileAsync(id, request, ct);
+
+    private static async Task<IResult> ListTrafficAuthorityCatalogAsync(
+        CompaniesDbContext companiesDb,
+        CancellationToken ct)
+    {
+        var items = await companiesDb.TrafficAuthorities
+            .AsNoTracking()
+            .OrderBy(a => a.Name)
+            .Select(a => new { code = a.Code, name = a.Name, region = a.Region })
+            .ToListAsync(ct);
+
+        return Results.Ok(items);
+    }
 
     private static Task<IResult> CreateOtAsync(
         CreateOtRequest request,

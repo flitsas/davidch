@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { TenantSummary } from "@/lib/admin/types";
 import { GradientButton } from "@/components/flit/Button";
@@ -8,15 +8,35 @@ import { FlitInput } from "@/components/flit/Input";
 
 type CreateMode = "create" | "link";
 
+type TrafficAuthorityCatalogItem = {
+  code: string;
+  name: string;
+  region: string;
+};
+
 export function OtCreateForm({ tenants }: { tenants: TenantSummary[] }) {
   const router = useRouter();
   const [mode, setMode] = useState<CreateMode>("create");
+  const [catalog, setCatalog] = useState<TrafficAuthorityCatalogItem[]>([]);
   const [divipolCode, setDivipolCode] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [slug, setSlug] = useState("");
   const [tenantId, setTenantId] = useState(tenants[0]?.id ?? "");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    void fetch("/api/v1/admin/ot/traffic-authority-catalog", { credentials: "include" })
+      .then(async (res) => {
+        if (!res.ok) return;
+        const items = (await res.json()) as TrafficAuthorityCatalogItem[];
+        setCatalog(items);
+        if (items.length > 0) {
+          setDivipolCode((current) => current || items[0]!.code);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -85,13 +105,39 @@ export function OtCreateForm({ tenants }: { tenants: TenantSummary[] }) {
       </fieldset>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <FlitInput
-          label="Código DIVIPOL"
-          name="divipol_code"
-          value={divipolCode}
-          onChange={(e) => setDivipolCode(e.target.value)}
-          required
-        />
+        <div>
+          <label
+            htmlFor="divipol_code"
+            className="mb-1 block text-sm font-semibold text-flit-text-primary"
+          >
+            Organismo de tránsito (DIVIPOL)
+          </label>
+          <select
+            id="divipol_code"
+            name="divipol_code"
+            className="flit-focus-ring w-full rounded-flit-md border border-flit-border-soft bg-flit-bg-card px-3 py-2 text-sm"
+            value={divipolCode}
+            onChange={(e) => {
+              const code = e.target.value;
+              setDivipolCode(code);
+              const item = catalog.find((c) => c.code === code);
+              if (item && !displayName.trim()) {
+                setDisplayName(item.name);
+              }
+            }}
+            required
+          >
+            <option value="">Seleccione…</option>
+            {catalog.map((item) => (
+              <option key={item.code} value={item.code}>
+                {item.name} ({item.code})
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-flit-text-secondary">
+            Debe coincidir con el organismo habilitado en la configuración de la compañía.
+          </p>
+        </div>
         <FlitInput
           label="Nombre para mostrar"
           name="display_name"
