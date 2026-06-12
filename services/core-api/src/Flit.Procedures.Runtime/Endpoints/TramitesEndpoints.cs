@@ -1,6 +1,7 @@
 using Flit.Identity.Shared.Auth;
 using Flit.Procedures.Runtime.Auth;
 using Flit.Procedures.Runtime.Create;
+using Flit.Procedures.Runtime.Documents;
 using Flit.Procedures.Runtime.Index;
 using Flit.Procedures.Runtime.Lookups;
 using Flit.Procedures.Runtime.Ot;
@@ -26,6 +27,8 @@ public static class TramitesEndpoints
         createGroup.MapGet("/lookups/simit", LookupSimitAsync);
         createGroup.MapGet("/lookups/rnmc", LookupRnmcAsync);
         createGroup.MapPost("/", CreateAsync);
+        createGroup.MapPost("/{id:guid}/documents", UploadDocumentAsync)
+            .DisableAntiforgery();
 
         return app;
     }
@@ -99,6 +102,15 @@ public static class TramitesEndpoints
         TramitesCreateHandler handler,
         CancellationToken ct) =>
         handler.HandleAsync(request, (CurrentUser)http.Items["CurrentUser"]!, ct);
+
+    private static Task<IResult> UploadDocumentAsync(
+        Guid id,
+        string label,
+        IFormFile file,
+        HttpContext http,
+        TramitesDocumentUploadHandler handler,
+        CancellationToken ct) =>
+        handler.HandleAsync(id, label, file, (CurrentUser)http.Items["CurrentUser"]!, ct);
 
     private static IResult ValidationError(string message) =>
         Results.Json(new { code = "VALIDATION_ERROR", message }, statusCode: StatusCodes.Status400BadRequest);
