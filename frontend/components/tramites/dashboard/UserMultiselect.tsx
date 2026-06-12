@@ -15,16 +15,17 @@ export function UserMultiselect({ baseQuery, excludedUserIds, onSelect }: Props)
   const [results, setResults] = useState<DashboardUserSearchItem[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const trimmedQ = q.trim();
+  const canSearch = trimmedQ.length >= 2;
+  const displayedResults = canSearch ? results : [];
+
   useEffect(() => {
-    if (q.trim().length < 2) {
-      setResults([]);
-      return;
-    }
+    if (!canSearch) return;
 
     const handle = window.setTimeout(() => {
       setLoading(true);
       const query = buildDashboardQuery({
-        q: q.trim(),
+        q: trimmedQ,
         page: 1,
         pageSize: 10,
       });
@@ -36,7 +37,7 @@ export function UserMultiselect({ baseQuery, excludedUserIds, onSelect }: Props)
     }, 300);
 
     return () => window.clearTimeout(handle);
-  }, [q, baseQuery, excludedUserIds]);
+  }, [canSearch, trimmedQ, baseQuery, excludedUserIds]);
 
   return (
     <div className="relative">
@@ -50,10 +51,12 @@ export function UserMultiselect({ baseQuery, excludedUserIds, onSelect }: Props)
           className="min-h-11 w-full rounded-flit-md border border-flit-border-soft bg-flit-bg-card px-3 text-flit-text-primary"
         />
       </label>
-      {loading ? <p className="mt-2 text-xs text-flit-text-secondary">Buscando…</p> : null}
-      {results.length > 0 ? (
+      {canSearch && loading ? (
+        <p className="mt-2 text-xs text-flit-text-secondary">Buscando…</p>
+      ) : null}
+      {displayedResults.length > 0 ? (
         <ul className="absolute z-10 mt-1 max-h-48 w-full overflow-auto rounded-flit-md border border-flit-border-soft bg-flit-bg-card shadow-lg">
-          {results.map((user) => (
+          {displayedResults.map((user) => (
             <li key={user.userId}>
               <button
                 type="button"

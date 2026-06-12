@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CompanyDetail } from "@/lib/admin/companies-types";
 import { companyStatusApiValue } from "@/lib/admin/companies-api";
-import { FlitButton, GradientButton } from "@/components/flit/Button";
+import { GradientButton } from "@/components/flit/Button";
 import { FlitInput } from "@/components/flit/Input";
 
 export function CompanyProfileForm({ company }: { company: CompanyDetail }) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FlitCard } from "@/components/flit/Card";
 import { CategoryDonutChart } from "./CategoryDonutChart";
 import { DateRangeFilter } from "./DateRangeFilter";
@@ -57,40 +57,43 @@ export function TramitesDashboard({ isSuperAdmin, defaultTenantId }: Props) {
     return ids;
   }, [topUsers, extraCards]);
 
-  const loadOverview = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    setSelectedCategory(null);
-    setDetailRows([]);
-    try {
-      const [summaryRes, topRes] = await Promise.all([
-        fetchDashboardSummary(baseQuery),
-        fetchDashboardUsersTop(baseQuery),
-      ]);
-      setSummary(summaryRes);
-      setTopUsers(topRes.items);
-      setExtraCards([]);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "No se pudo cargar el dashboard.");
-      setSummary(null);
-      setTopUsers([]);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadOverview() {
+      setLoading(true);
+      setError(null);
+      setSelectedCategory(null);
+      setDetailRows([]);
+      try {
+        const [summaryRes, topRes] = await Promise.all([
+          fetchDashboardSummary(baseQuery),
+          fetchDashboardUsersTop(baseQuery),
+        ]);
+        if (cancelled) return;
+        setSummary(summaryRes);
+        setTopUsers(topRes.items);
+        setExtraCards([]);
+      } catch (e) {
+        if (cancelled) return;
+        setError(e instanceof Error ? e.message : "No se pudo cargar el dashboard.");
+        setSummary(null);
+        setTopUsers([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
+
+    void loadOverview();
+    return () => {
+      cancelled = true;
+    };
   }, [baseQuery]);
 
   useEffect(() => {
-    void loadOverview();
-  }, [loadOverview]);
+    if (!selectedCategory) return;
 
-  useEffect(() => {
-    if (!selectedCategory) {
-      setDetailRows([]);
-      setDetailTotal(0);
-      return;
-    }
-
-    setDetailLoading(true);
+    let cancelled = false;
     const query = buildDashboardQuery({
       from,
       to,
@@ -99,17 +102,28 @@ export function TramitesDashboard({ isSuperAdmin, defaultTenantId }: Props) {
       page: 1,
       pageSize: 50,
     });
-    void fetchDashboardDetail(query)
-      .then((res) => {
+
+    async function loadDetail() {
+      setDetailLoading(true);
+      try {
+        const res = await fetchDashboardDetail(query);
+        if (cancelled) return;
         setDetailRows(res.items);
         setDetailTotal(res.totalCount);
-      })
-      .catch((e) => {
+      } catch (e) {
+        if (cancelled) return;
         setError(e instanceof Error ? e.message : "No se pudo cargar el detalle.");
         setDetailRows([]);
         setDetailTotal(0);
-      })
-      .finally(() => setDetailLoading(false));
+      } finally {
+        if (!cancelled) setDetailLoading(false);
+      }
+    }
+
+    void loadDetail();
+    return () => {
+      cancelled = true;
+    };
   }, [selectedCategory, from, to, tenantId]);
 
   async function handleAddUser(user: DashboardUserSearchItem) {
