@@ -36,7 +36,9 @@ export default async function TramitesPage({
 
         {!res.ok && (
           <p className="px-6 py-8 text-sm text-flit-danger" role="alert">
-            No se pudo cargar el listado de trámites.
+            {session.isSuperAdmin && !session.tenantId
+              ? "Los trámites requieren contexto de compañía. Inicie sesión como administrador de tenant (p. ej. admin@tenant-a.com)."
+              : "No se pudo cargar el listado de trámites."}
           </p>
         )}
 

@@ -76,10 +76,17 @@ export function ProcedureInstanceWizard({ onClose, onSuccess }: Props) {
     void fetchProcedureTypes()
       .then(setProcedureTypes)
       .catch((e: Error) => setError(e.message));
+  }, []);
+
+  useEffect(() => {
+    if (step !== 2) {
+      return;
+    }
+
     void fetchTrafficAuthorities()
       .then(setTrafficAuthorities)
       .catch((e: Error) => setError(e.message));
-  }, []);
+  }, [step]);
 
   function handleTypeChange(typeId: string) {
     setSelectedTypeId(typeId);
@@ -305,8 +312,10 @@ export function ProcedureInstanceWizard({ onClose, onSuccess }: Props) {
               Organismo de tránsito
             </legend>
             {trafficAuthorities.length === 0 && (
-              <p className="text-sm text-flit-text-secondary">
-                No hay organismos de tránsito disponibles para su compañía.
+              <p className="text-sm text-flit-text-secondary" data-testid="tramites-no-ot">
+                No hay organismos habilitados con OT activo. Un Super Admin debe: (1) crear el OT
+                con el código DIVIPOL del catálogo (p. ej. 05001000) y (2) habilitar ese organismo
+                en la configuración de la compañía.
               </p>
             )}
             {trafficAuthorities.map((ot) => (

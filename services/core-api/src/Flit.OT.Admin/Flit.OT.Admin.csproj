@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\Flit.Companies.Infrastructure\Flit.Companies.Infrastructure.csproj" />
     <ProjectReference Include="..\Flit.OT.Infrastructure\Flit.OT.Infrastructure.csproj" />
     <ProjectReference Include="..\Flit.OT.Shared\Flit.OT.Shared.csproj" />
     <ProjectReference Include="..\Flit.Identity.Infrastructure\Flit.Identity.Infrastructure.csproj" />

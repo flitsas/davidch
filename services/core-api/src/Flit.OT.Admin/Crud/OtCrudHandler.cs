@@ -1,3 +1,4 @@
+using Flit.Companies.Infrastructure.Persistence;
 using Flit.Identity.Infrastructure.Persistence;
 using Flit.Identity.Infrastructure.Persistence.Entities;
 using Flit.Identity.Shared.Errors;
@@ -11,7 +12,8 @@ namespace Flit.OT.Admin.Crud;
 
 public sealed class OtCrudHandler(
     OtDbContext otDb,
-    IdentityDbContext identityDb)
+    IdentityDbContext identityDb,
+    CompaniesDbContext companiesDb)
 {
     public async Task<IResult> GetDetailAsync(Guid id, CancellationToken ct)
     {
@@ -40,6 +42,12 @@ public sealed class OtCrudHandler(
         }
 
         var divipol = request.DivipolCode.Trim();
+        if (!await companiesDb.TrafficAuthorities.AnyAsync(a => a.Code == divipol, ct))
+        {
+            return ValidationError(
+                "El código DIVIPOL debe existir en el catálogo de organismos de tránsito (p. ej. 05001000 para Medellín).");
+        }
+
         if (await otDb.OtProfiles.AnyAsync(o => o.DivipolCode == divipol, ct))
         {
             return Conflict("DIVIPOL code already registered.");
@@ -99,6 +107,12 @@ public sealed class OtCrudHandler(
         }
 
         var divipol = request.DivipolCode.Trim();
+        if (!await companiesDb.TrafficAuthorities.AnyAsync(a => a.Code == divipol, ct))
+        {
+            return ValidationError(
+                "El código DIVIPOL debe existir en el catálogo de organismos de tránsito (p. ej. 05001000 para Medellín).");
+        }
+
         if (await otDb.OtProfiles.AnyAsync(o => o.DivipolCode == divipol && o.Id != id, ct))
         {
             return Conflict("DIVIPOL code already registered.");

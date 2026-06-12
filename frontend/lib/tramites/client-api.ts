@@ -8,9 +8,16 @@ import type {
 
 async function parseJson<T>(res: Response): Promise<T> {
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    const message = typeof body.message === "string" ? body.message : `HTTP ${res.status}`;
-    throw new Error(message);
+    const body = (await res.json().catch(() => ({}))) as { message?: string; code?: string };
+    if (typeof body.message === "string") {
+      throw new Error(body.message);
+    }
+    if (body.code === "FORBIDDEN") {
+      throw new Error(
+        "No tiene permisos para esta operación o debe iniciar sesión con un usuario de compañía.",
+      );
+    }
+    throw new Error(`HTTP ${res.status}`);
   }
   return res.json() as Promise<T>;
 }

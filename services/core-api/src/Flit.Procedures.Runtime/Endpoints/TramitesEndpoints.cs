@@ -69,7 +69,7 @@ public static class TramitesEndpoints
         var user = (CurrentUser)http.Items["CurrentUser"]!;
         if (user.TenantId is not { } tenantId)
         {
-            return Results.Json(new { code = "FORBIDDEN" }, statusCode: StatusCodes.Status403Forbidden);
+            return TenantContextRequired();
         }
 
         var items = await picker.ListForTenantAsync(tenantId, ct);
@@ -126,4 +126,13 @@ public static class TramitesEndpoints
 
     private static IResult ValidationError(string message) =>
         Results.Json(new { code = "VALIDATION_ERROR", message }, statusCode: StatusCodes.Status400BadRequest);
+
+    private static IResult TenantContextRequired() =>
+        Results.Json(
+            new
+            {
+                code = "FORBIDDEN",
+                message = "Los trámites requieren un usuario con tenant asignado. Inicie sesión como administrador de compañía.",
+            },
+            statusCode: StatusCodes.Status403Forbidden);
 }

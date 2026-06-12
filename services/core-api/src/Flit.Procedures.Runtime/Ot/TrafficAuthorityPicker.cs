@@ -38,13 +38,23 @@ public sealed class TrafficAuthorityPicker(
             return [];
         }
 
+        var catalogByCode = await companiesDb.TrafficAuthorities
+            .AsNoTracking()
+            .Where(a => enabledCodes.Contains(a.Code))
+            .ToDictionaryAsync(a => a.Code, ct);
+
         var otProfiles = await otDb.OtProfiles
             .AsNoTracking()
             .Where(o => enabledCodes.Contains(o.DivipolCode) && o.Status == OtStatus.Active)
             .ToListAsync(ct);
 
         return otProfiles
-            .Select(o => new TrafficAuthorityDto(o.DivipolCode, o.DisplayName, o.TenantId))
+            .Select(o => new TrafficAuthorityDto(
+                o.DivipolCode,
+                catalogByCode.TryGetValue(o.DivipolCode, out var catalog)
+                    ? catalog.Name
+                    : o.DisplayName,
+                o.TenantId))
             .OrderBy(o => o.DisplayName)
             .ToList();
     }
