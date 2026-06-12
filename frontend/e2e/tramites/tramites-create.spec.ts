@@ -9,7 +9,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-async function createProcedureTypeForE2E(request: APIRequestContext): Promise<string> {
+async function createProcedureTypeForE2E(
+  request: APIRequestContext,
+  uniqueName: string,
+): Promise<string> {
   const base = getPlaywrightBaseUrl();
   const { email, password } = adminCredentials();
   const login = await request.post(`${base}/api/auth/login`, {
@@ -17,7 +20,6 @@ async function createProcedureTypeForE2E(request: APIRequestContext): Promise<st
   });
   expect(login.ok()).toBeTruthy();
 
-  const uniqueName = `E2E Tramite ${Date.now()}`;
   const create = await request.post(`${base}/api/v1/admin/procedure-types`, {
     data: {
       name: uniqueName,
@@ -38,7 +40,8 @@ test.beforeEach(async ({}, testInfo) => {
 test("tenant admin can create tramite via wizard", async ({ page, request }) => {
   test.setTimeout(120_000);
 
-  const typeId = await createProcedureTypeForE2E(request);
+  const uniqueName = `E2E Tramite ${Date.now()}`;
+  const typeId = await createProcedureTypeForE2E(request, uniqueName);
   await loginAsTenantAdmin(page);
   await page.goto("/tramites");
 
@@ -72,5 +75,5 @@ test("tenant admin can create tramite via wizard", async ({ page, request }) => 
   expect(response.ok(), `Create failed HTTP ${response.status()}`).toBeTruthy();
 
   await expect(page.getByTestId("tramites-index-table")).toBeVisible();
-  await expect(page.getByText("ABC123")).toBeVisible();
+  await expect(page.getByRole("cell", { name: uniqueName })).toBeVisible();
 });

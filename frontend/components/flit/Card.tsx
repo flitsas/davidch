@@ -1,12 +1,13 @@
-import type { ReactNode } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 
 export function FlitCard({
   children,
   className = "",
+  ...props
 }: {
   children: ReactNode;
   className?: string;
-}) {
+} & HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={[
@@ -15,6 +16,7 @@ export function FlitCard({
       ]
         .filter(Boolean)
         .join(" ")}
+      {...props}
     >
       {children}
     </div>
