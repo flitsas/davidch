@@ -61,10 +61,13 @@ services:
       Smtp__Port: "1025"
       Smtp__UseSsl: "false"
       Smtp__From: identity@flit.local
-      App__PublicBaseUrl: ${CORS_ORIGIN:-http://localhost:40102}
+      App__PublicBaseUrl: ${CORS_ORIGIN:-http://localhost:3000}
       Verifik__BearerToken: ${VERIFIK_API_TOKEN:-}
       Verifik__BaseUrl: ${VERIFIK_BASE_URL:-https://api.verifik.co}
       Verifik__TimeoutSeconds: ${VERIFIK_TIMEOUT_SECONDS:-30}
+      Procedures__DocumentStoragePath: /data/procedure-docs
+    volumes:
+      - flit_procedure_docs:/data/procedure-docs
     ports:
       - "127.0.0.1:${CORE_API_PORT:-40302}:80"
     depends_on:
@@ -110,7 +113,7 @@ services:
     environment:
       API_BASE_URL: http://gateway:8080
     ports:
-      - "127.0.0.1:${FRONTEND_PORT:-40102}:3000"
+      - "127.0.0.1:${FRONTEND_PORT:-3000}:3000"
     depends_on:
       gateway:
         condition: service_healthy
@@ -119,3 +122,4 @@ services:
 
 volumes:
   flit_pg_data:
+  flit_procedure_docs:

@@ -54,7 +54,11 @@ public sealed class IdentityWebApplicationFactory : WebApplicationFactory<Progra
                 ["Identity:BootstrapEmail"] = "super@flit.local",
                 ["Identity:BootstrapPassword"] = "ChangeMe!123",
                 ["Identity:EnableRateLimiting"] = "true",
-                ["App:PublicBaseUrl"] = "http://localhost:5000"
+                ["App:PublicBaseUrl"] = "http://localhost:5000",
+                ["Procedures:DocumentStoragePath"] = Path.Combine(
+                    Path.GetTempPath(),
+                    "flit-procedure-docs-tests",
+                    Guid.NewGuid().ToString("N"))
             });
         });
 

@@ -13,6 +13,7 @@ using Flit.Procedures.Admin.Endpoints;
 using Flit.Procedures.Admin.Index;
 using Flit.Procedures.Admin.Services;
 using Flit.Procedures.Runtime.Create;
+using Flit.Procedures.Runtime.Documents;
 using Flit.Procedures.Runtime.Endpoints;
 using Flit.Procedures.Runtime.Index;
 using Flit.Procedures.Runtime.Lookups;
@@ -86,6 +87,13 @@ builder.Services.AddScoped<IProcedureCatalogSync, ProcedureCatalogSync>();
 builder.Services.AddScoped<ProcedureTypeWriter>();
 builder.Services.AddScoped<TramitesIndexHandler>();
 builder.Services.AddScoped<TramitesCreateHandler>();
+builder.Services.AddScoped<TramitesDocumentUploadHandler>();
+builder.Services.AddSingleton(_ =>
+{
+    var basePath = builder.Configuration["Procedures:DocumentStoragePath"]
+        ?? Path.Combine(Path.GetTempPath(), "flit-procedure-docs");
+    return new ProcedureDocumentStorage(basePath);
+});
 builder.Services.AddScoped<TrafficAuthorityPicker>();
 builder.Services.AddSingleton<IExternalLookupService, StubExternalLookupService>();
 builder.Services.AddHttpContextAccessor();
