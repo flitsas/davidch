@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using Flit.Companies.Infrastructure.Persistence;
 using Flit.Companies.Shared.Domain;
 using Flit.Identity.Infrastructure.Persistence;
+using Flit.Identity.Infrastructure.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -25,10 +26,26 @@ public class CompaniesCrudTests : IClassFixture<IdentityWebApplicationFactory>
         await _factory.EnsureTenantSeededAsync();
         var client = await _factory.LoginAsSuperAdminAsync();
 
+        Guid linkTenantId;
+        using (var tenantScope = _factory.Services.CreateScope())
+        {
+            var identityDb = tenantScope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+            linkTenantId = Guid.NewGuid();
+            identityDb.Tenants.Add(new Tenant
+            {
+                Id = linkTenantId,
+                Name = "Company Link Test Tenant",
+                Slug = $"co-link-{Guid.NewGuid():N}"[..20],
+                IsActive = true,
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+            await identityDb.SaveChangesAsync();
+        }
+
         var response = await client.PostAsJsonAsync("/api/v1/admin/companies", new
         {
             mode = "link",
-            tenant_id = _factory.TenantId,
+            tenant_id = linkTenantId,
             nit = $"900{Guid.NewGuid():N}"[..12],
             legal_name = "Linked Company SAS",
             status = "Active"
