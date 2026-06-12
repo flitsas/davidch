@@ -9,7 +9,8 @@
 #
 # Variables requeridas en .env (junto al compose):
 #   CONNECTION_STRING_CORE  cadena Npgsql .NET (Host=...;Port=5432;Database=...;Username=...;Password=...)
-#   CORS_ORIGIN             origen permitido del frontend (https://dev.davidch.flitsas.online)
+#   CORS_ORIGIN             origen del frontend y base URL de links en correos (https://dev.davidch.flitsas.online)
+#   SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASSWORD / SMTP_FROM  correo transaccional (p. ej. Office 365)
 #   VERIFIK_API_TOKEN       token Verifik (RUNT)
 # Variables para AISLAR este proyecto del resto del VPS (UNICAS por proyecto):
 #   COMPOSE_PROJECT_NAME    nombre del proyecto Compose (default: flit-dev)
@@ -53,6 +54,13 @@ services:
       Verifik__BearerToken: ${VERIFIK_API_TOKEN:-}
       Verifik__BaseUrl: ${VERIFIK_BASE_URL:-https://api.verifik.co}
       Verifik__TimeoutSeconds: ${VERIFIK_TIMEOUT_SECONDS:-30}
+      Smtp__Host: ${SMTP_HOST}
+      Smtp__Port: ${SMTP_PORT:-587}
+      Smtp__User: ${SMTP_USER}
+      Smtp__Password: ${SMTP_PASSWORD}
+      Smtp__From: ${SMTP_FROM}
+      Smtp__FromName: ${SMTP_FROM_NAME:-FLIT}
+      App__PublicBaseUrl: ${CORS_ORIGIN:-https://dev.davidch.flitsas.online}
     ports:
       - "127.0.0.1:${CORE_API_PORT:-40302}:8081"
     healthcheck:
