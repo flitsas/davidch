@@ -4,6 +4,10 @@ import { hasPermission, type MeResponse } from "@/lib/auth/session";
 export function buildAdminNav(session: MeResponse): NavItem[] {
   const items: NavItem[] = [{ href: "/", label: "Inicio" }];
 
+  if (hasPermission(session, "tramites:read")) {
+    items.push({ href: "/tramites", label: "Trámites" });
+  }
+
   if (hasPermission(session, "users:read")) {
     items.push({ href: "/admin/users", label: "Usuarios" });
   }

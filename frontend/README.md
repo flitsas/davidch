@@ -5,13 +5,14 @@ This is the FLIT Identity frontend (Next.js App Router).
 ### Start stack
 
 ```bash
-cd ../docker
-cp .env.example .env   # if needed
+cd ..   # repo root
+cp .env.example .env   # if needed — FRONTEND_PORT=3000 for local
 docker compose up -d
 ```
 
-- Frontend: http://localhost:3000
-- API direct: http://localhost:5080/api/health
+- Frontend: http://localhost:3000 (`FRONTEND_PORT` in `.env`, default 3000)
+- Gateway API: http://localhost:40202/api/health
+- Core API direct: http://localhost:40302/api/health
 - Mailhog: http://localhost:8025
 
 ### Bootstrap login
