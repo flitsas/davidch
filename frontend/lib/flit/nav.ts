@@ -9,6 +9,10 @@ export function buildAdminNav(session: MeResponse): NavItem[] {
   }
 
   if (hasPermission(session, "users:read")) {
+    items.push({ href: "/tramites/dashboard", label: "Dashboard" });
+  }
+
+  if (hasPermission(session, "users:read")) {
     items.push({ href: "/admin/users", label: "Usuarios" });
   }
   if (hasPermission(session, "roles:read")) {
