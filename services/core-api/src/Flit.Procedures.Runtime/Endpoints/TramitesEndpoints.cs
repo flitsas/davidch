@@ -22,6 +22,7 @@ public static class TramitesEndpoints
 
         var createGroup = app.MapGroup("/api/v1/tramites").RequireTramitesCreate();
         createGroup.MapGet("/procedure-types", ListProcedureTypesAsync);
+        createGroup.MapGet("/procedure-types/{id:guid}", GetProcedureTypeByIdAsync);
         createGroup.MapGet("/traffic-authorities", ListTrafficAuthoritiesAsync);
         createGroup.MapGet("/lookups/rues", LookupRuesAsync);
         createGroup.MapGet("/lookups/simit", LookupSimitAsync);
@@ -47,6 +48,17 @@ public static class TramitesEndpoints
     {
         var items = await definitions.ListActiveAsync(ct);
         return Results.Ok(items);
+    }
+
+    private static async Task<IResult> GetProcedureTypeByIdAsync(
+        Guid id,
+        IProcedureDefinitionService definitions,
+        CancellationToken ct)
+    {
+        var definition = await definitions.GetByIdAsync(id, ct);
+        return definition is null
+            ? Results.Json(new { code = "NOT_FOUND" }, statusCode: StatusCodes.Status404NotFound)
+            : Results.Ok(definition);
     }
 
     private static async Task<IResult> ListTrafficAuthoritiesAsync(
