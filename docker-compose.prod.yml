@@ -45,6 +45,7 @@ services:
       - "host.docker.internal:host-gateway"
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENV:-Production}
+      # El gateway (YARP) enruta a http://core-api:8081 -> la app escucha en 8081.
       ASPNETCORE_URLS: http://+:8081
       ConnectionStrings__Identity: ${CONNECTION_STRING_CORE}
       Cors__AllowedOrigins: ${CORS_ORIGIN:-https://dev.davidch.flitsas.online}
