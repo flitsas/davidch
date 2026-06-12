@@ -26,9 +26,7 @@ export function UserProductivityCard({ displayName, email, count, onRemove }: Pr
           </button>
         ) : null}
       </div>
-      <p className="mt-3 text-2xl font-bold text-flit-text-primary">
-        {count > 0 ? count : "—"}
-      </p>
+      <p className="mt-3 text-2xl font-bold text-flit-text-primary">{count > 0 ? count : "—"}</p>
       {count === 0 ? (
         <p className="mt-1 text-xs text-flit-text-secondary">
           Este usuario no ha radicado ningún trámite

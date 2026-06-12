@@ -141,15 +141,8 @@ export function TramitesDashboard({ isSuperAdmin, defaultTenantId }: Props) {
     <div className="space-y-6" data-testid="tramites-dashboard">
       <FlitCard className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-4">
-          <DateRangeFilter
-            from={from}
-            to={to}
-            onFromChange={setFrom}
-            onToChange={setTo}
-          />
-          {isSuperAdmin ? (
-            <TenantSelector value={tenantId} onChange={setTenantId} />
-          ) : null}
+          <DateRangeFilter from={from} to={to} onFromChange={setFrom} onToChange={setTo} />
+          {isSuperAdmin ? <TenantSelector value={tenantId} onChange={setTenantId} /> : null}
         </div>
         {summary ? (
           <p className="text-sm text-flit-text-secondary">
@@ -211,9 +204,7 @@ export function TramitesDashboard({ isSuperAdmin, defaultTenantId }: Props) {
               displayName={user.displayName}
               email={user.email}
               count={user.count}
-              onRemove={() =>
-                setExtraCards((prev) => prev.filter((c) => c.userId !== user.userId))
-              }
+              onRemove={() => setExtraCards((prev) => prev.filter((c) => c.userId !== user.userId))}
             />
           ))}
         </div>

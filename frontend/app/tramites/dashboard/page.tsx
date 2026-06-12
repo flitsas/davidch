@@ -11,10 +11,7 @@ export default async function TramitesDashboardPage() {
         title="Dashboard de Trámites"
         subtitle="Métricas operativas por tipo de trámite y productividad de radicadores"
       />
-      <TramitesDashboard
-        isSuperAdmin={session.isSuperAdmin}
-        defaultTenantId={session.tenantId}
-      />
+      <TramitesDashboard isSuperAdmin={session.isSuperAdmin} defaultTenantId={session.tenantId} />
     </>
   );
 }
