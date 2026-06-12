@@ -1,6 +1,7 @@
 using Flit.Identity.Shared.Auth;
 using Flit.Procedures.Runtime.Auth;
 using Flit.Procedures.Runtime.Create;
+using Flit.Procedures.Runtime.Dashboard;
 using Flit.Procedures.Runtime.Documents;
 using Flit.Procedures.Runtime.Index;
 using Flit.Procedures.Runtime.Lookups;
@@ -30,6 +31,14 @@ public static class TramitesEndpoints
         createGroup.MapPost("/", CreateAsync);
         createGroup.MapPost("/{id:guid}/documents", UploadDocumentAsync)
             .DisableAntiforgery();
+
+        var dashboardGroup = app.MapGroup("/api/v1/tramites/dashboard").RequireDashboardAccess();
+        dashboardGroup.MapGet("/summary", GetDashboardSummaryAsync);
+        dashboardGroup.MapGet("/detail", GetDashboardDetailAsync);
+        dashboardGroup.MapGet("/users/top", GetDashboardUsersTopAsync);
+        dashboardGroup.MapGet("/users", GetDashboardUsersSearchAsync);
+        dashboardGroup.MapGet("/users/{userId:guid}/stats", GetDashboardUserStatsAsync);
+        dashboardGroup.MapGet("/export", GetDashboardExportAsync);
 
         return app;
     }
@@ -123,6 +132,74 @@ public static class TramitesEndpoints
         TramitesDocumentUploadHandler handler,
         CancellationToken ct) =>
         handler.HandleAsync(id, label, file, (CurrentUser)http.Items["CurrentUser"]!, ct);
+
+    private static Task<IResult> GetDashboardSummaryAsync(
+        HttpContext http,
+        TramitesDashboardSummaryHandler handler,
+        CancellationToken ct,
+        string? from = null,
+        string? to = null,
+        Guid? tenantId = null) =>
+        handler.HandleAsync((CurrentUser)http.Items["CurrentUser"]!, from, to, tenantId, ct);
+
+    private static Task<IResult> GetDashboardDetailAsync(
+        HttpContext http,
+        TramitesDashboardDetailHandler handler,
+        CancellationToken ct,
+        string category,
+        string? from = null,
+        string? to = null,
+        Guid? tenantId = null,
+        int page = 1,
+        int pageSize = 20) =>
+        handler.HandleAsync(
+            (CurrentUser)http.Items["CurrentUser"]!,
+            category,
+            from,
+            to,
+            tenantId,
+            page,
+            pageSize,
+            ct);
+
+    private static Task<IResult> GetDashboardUsersTopAsync(
+        HttpContext http,
+        TramitesDashboardUsersHandler handler,
+        CancellationToken ct,
+        string? from = null,
+        string? to = null,
+        Guid? tenantId = null) =>
+        handler.HandleTopAsync((CurrentUser)http.Items["CurrentUser"]!, from, to, tenantId, ct);
+
+    private static Task<IResult> GetDashboardUsersSearchAsync(
+        HttpContext http,
+        TramitesDashboardUsersHandler handler,
+        CancellationToken ct,
+        string? q = null,
+        Guid? tenantId = null,
+        int page = 1,
+        int pageSize = 20) =>
+        handler.HandleSearchAsync((CurrentUser)http.Items["CurrentUser"]!, q, tenantId, page, pageSize, ct);
+
+    private static Task<IResult> GetDashboardUserStatsAsync(
+        HttpContext http,
+        TramitesDashboardUsersHandler handler,
+        Guid userId,
+        CancellationToken ct,
+        string? from = null,
+        string? to = null,
+        Guid? tenantId = null) =>
+        handler.HandleStatsAsync((CurrentUser)http.Items["CurrentUser"]!, userId, from, to, tenantId, ct);
+
+    private static Task<IResult> GetDashboardExportAsync(
+        HttpContext http,
+        TramitesDashboardExportHandler handler,
+        CancellationToken ct,
+        string category,
+        string? from = null,
+        string? to = null,
+        Guid? tenantId = null) =>
+        handler.HandleAsync((CurrentUser)http.Items["CurrentUser"]!, category, from, to, tenantId, ct);
 
     private static IResult ValidationError(string message) =>
         Results.Json(new { code = "VALIDATION_ERROR", message }, statusCode: StatusCodes.Status400BadRequest);
