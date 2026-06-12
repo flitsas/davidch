@@ -12,6 +12,11 @@ using Flit.Procedures.Admin.Crud;
 using Flit.Procedures.Admin.Endpoints;
 using Flit.Procedures.Admin.Index;
 using Flit.Procedures.Admin.Services;
+using Flit.Procedures.Runtime.Create;
+using Flit.Procedures.Runtime.Endpoints;
+using Flit.Procedures.Runtime.Index;
+using Flit.Procedures.Runtime.Lookups;
+using Flit.Procedures.Runtime.Ot;
 using Flit.Procedures.Infrastructure.Persistence;
 using Flit.Procedures.Shared;
 using Flit.Companies.Runt;
@@ -79,6 +84,10 @@ builder.Services.AddScoped<ProcedureTypeCrudHandler>();
 builder.Services.AddScoped<IProcedureDefinitionService, ProcedureDefinitionService>();
 builder.Services.AddScoped<IProcedureCatalogSync, ProcedureCatalogSync>();
 builder.Services.AddScoped<ProcedureTypeWriter>();
+builder.Services.AddScoped<TramitesIndexHandler>();
+builder.Services.AddScoped<TramitesCreateHandler>();
+builder.Services.AddScoped<TrafficAuthorityPicker>();
+builder.Services.AddSingleton<IExternalLookupService, StubExternalLookupService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<VerifikAdapter>();
 builder.Services.AddSingleton<IntempoStubAdapter>();
@@ -104,6 +113,10 @@ using (var scope = app.Services.CreateScope())
     var companiesDb = scope.ServiceProvider.GetRequiredService<CompaniesDbContext>();
     await companiesDb.Database.MigrateAsync();
     await CompaniesDbSeeder.SeedAsync(companiesDb);
+    if (app.Environment.IsDevelopment())
+    {
+        await DevCompanySeeder.SeedAsync(companiesDb, db);
+    }
 
     var otDb = scope.ServiceProvider.GetRequiredService<OtDbContext>();
     await otDb.Database.MigrateAsync();
@@ -132,6 +145,7 @@ app.MapCompaniesAdminEndpoints();
 app.MapOtAdminEndpoints();
 app.MapOtSettingsEndpoints();
 app.MapProcedureTypeAdminEndpoints();
+app.MapTramitesEndpoints();
 app.MapRuntEndpoints();
 
 app.Run();

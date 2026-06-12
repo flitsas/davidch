@@ -8,6 +8,17 @@ namespace Flit.Procedures.Admin.Services;
 
 public sealed class ProcedureDefinitionService(ProceduresDbContext db) : IProcedureDefinitionService
 {
+    public async Task<ProcedureDefinitionDto?> GetByIdAsync(Guid procedureTypeId, CancellationToken ct)
+    {
+        var entity = await db.ProcedureTypes
+            .AsNoTracking()
+            .Include(p => p.Actors.OrderBy(a => a.SortOrder))
+            .Include(p => p.Documents.OrderBy(d => d.SortOrder))
+            .SingleOrDefaultAsync(p => p.Id == procedureTypeId && p.IsActive, ct);
+
+        return entity is null ? null : ToDefinitionDto(entity);
+    }
+
     public async Task<ProcedureDefinitionDto?> GetByCodeAsync(string procedureTypeCode, CancellationToken ct)
     {
         var entity = await db.ProcedureTypes
