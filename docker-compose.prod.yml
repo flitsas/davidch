@@ -45,6 +45,7 @@ services:
       - "host.docker.internal:host-gateway"
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENV:-Production}
+      ASPNETCORE_URLS: http://+:8081
       ConnectionStrings__Identity: ${CONNECTION_STRING_CORE}
       Cors__AllowedOrigins: ${CORS_ORIGIN:-https://dev.davidch.flitsas.online}
       Jwt__DevGenerate: "true"
