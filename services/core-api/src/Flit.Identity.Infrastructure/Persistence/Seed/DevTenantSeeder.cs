@@ -21,7 +21,7 @@ public static class DevTenantSeeder
     [
         "users:create", "users:read", "users:update",
         "roles:create", "roles:read", "roles:update", "roles:delete",
-        "tramites:update",
+        "tramites:read", "tramites:create", "tramites:update",
     ];
 
     public static async Task SeedAsync(

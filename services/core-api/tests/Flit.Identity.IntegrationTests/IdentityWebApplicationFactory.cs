@@ -2,6 +2,8 @@ using System.Net.Http.Json;
 using Flit.Identity.Infrastructure.Persistence;
 using Flit.Identity.Infrastructure.Persistence.Entities;
 using Flit.Identity.Infrastructure.Persistence.Seed;
+using Flit.Companies.Infrastructure.Persistence;
+using Flit.Companies.Infrastructure.Persistence.Seed;
 using Flit.OT.Infrastructure.Persistence;
 using Flit.OT.Infrastructure.Persistence.Seed;
 using Flit.Identity.Infrastructure.Security;
@@ -75,6 +77,9 @@ public sealed class IdentityWebApplicationFactory : WebApplicationFactory<Progra
         var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
 
         await DevTenantSeeder.SeedAsync(db, hasher);
+
+        var companiesDb = scope.ServiceProvider.GetRequiredService<CompaniesDbContext>();
+        await DevCompanySeeder.SeedAsync(companiesDb, db);
 
         var otDb = scope.ServiceProvider.GetRequiredService<OtDbContext>();
         await DevOtSeeder.SeedAsync(otDb, db);

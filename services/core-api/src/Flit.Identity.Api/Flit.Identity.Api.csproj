@@ -13,6 +13,7 @@
     <ProjectReference Include="..\Flit.OT.Admin\Flit.OT.Admin.csproj" />
     <ProjectReference Include="..\Flit.Procedures.Infrastructure\Flit.Procedures.Infrastructure.csproj" />
     <ProjectReference Include="..\Flit.Procedures.Admin\Flit.Procedures.Admin.csproj" />
+    <ProjectReference Include="..\Flit.Procedures.Runtime\Flit.Procedures.Runtime.csproj" />
   </ItemGroup>
 
   <ItemGroup>
